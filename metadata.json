@@ -1,0 +1,6 @@
+{
+  "name": "Ultra Bee Brakes",
+  "description": "Oficjalny sklep układu hamulcowego Ultra Bee Brakes. W pełni hydrauliczny motocyklowy układ na tył z tarczą 240 mm i dwutłoczkowym zaciskiem.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
