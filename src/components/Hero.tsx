@@ -8,9 +8,10 @@ interface HeroProps {
   onOpenCheckout: () => void;
   onOpenUploader: () => void;
   onAddToCart: (rect: DOMRect, image?: string) => void;
+  stock?: number | null;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onOpenCheckout, onOpenUploader, onAddToCart }) => {
+export const Hero: React.FC<HeroProps> = ({ onOpenCheckout, onOpenUploader, onAddToCart, stock }) => {
   const { images, isCustomLoaded, fitMode, setFitMode } = useProductImages();
   const [activeTabId, setActiveTabId] = useState<keyof ImageSlots>('kit');
 
@@ -315,12 +316,46 @@ export const Hero: React.FC<HeroProps> = ({ onOpenCheckout, onOpenUploader, onAd
                     </span>
                   </div>
 
+                  {/* Stock availability indicator */}
+                  {stock !== undefined && stock !== null && (
+                    <div className="mb-3 flex items-center justify-between text-xs px-3 py-2 rounded-xl bg-zinc-950/80 border border-white/5">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            stock > 3
+                              ? 'bg-emerald-400 animate-pulse shadow-sm shadow-emerald-500/50'
+                              : stock > 0
+                              ? 'bg-amber-400 animate-ping'
+                              : 'bg-rose-500'
+                          }`}
+                        />
+                        <span className="text-zinc-300 font-medium">
+                          {stock > 3 ? (
+                            <>
+                              Dostępność: <strong className="text-white font-bold">{stock} szt.</strong> w magazynie
+                            </>
+                          ) : stock > 0 ? (
+                            <>
+                              <span className="text-amber-400 font-bold">Ostatnie {stock} szt.!</span> Szybka wysyłka
+                            </>
+                          ) : (
+                            <span className="text-rose-400 font-bold">Chwilowy brak w magazynie</span>
+                          )}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-zinc-500">
+                        {stock > 0 ? 'Wysyłka w 24h' : 'Dostawa wkrótce'}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Single Add to Cart Button */}
                   <AddToCartButton
                     onAdd={(rect) => onAddToCart(rect, currentImage)}
                     price={799}
-                    label="Dodaj do koszyka"
+                    label={stock !== null && stock !== undefined && stock <= 0 ? 'Chwilowo wyprzedane' : 'Dodaj do koszyka'}
                     className="w-full"
+                    disabled={stock !== null && stock !== undefined && stock <= 0}
                   />
 
                   {/* 14-day return policy highlight */}

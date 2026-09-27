@@ -8,6 +8,7 @@ interface AddToCartButtonProps {
   label?: string;
   className?: string;
   compact?: boolean;
+  disabled?: boolean;
 }
 
 export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
@@ -16,10 +17,12 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   label = 'Dodaj do koszyka',
   className = '',
   compact = false,
+  disabled = false,
 }) => {
   const [isAdded, setIsAdded] = useState(false);
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (disabled) return;
     const rect = e.currentTarget.getBoundingClientRect();
     onAdd(rect);
     setIsAdded(true);
@@ -30,13 +33,16 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
 
   return (
     <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.96 }}
+      whileHover={disabled ? {} : { scale: 1.02 }}
+      whileTap={disabled ? {} : { scale: 0.96 }}
       onClick={handleClick}
-      className={`relative overflow-hidden font-semibold transition-all shadow-md active:shadow-sm cursor-pointer flex items-center justify-center gap-2 ${
-        isAdded
-          ? 'bg-emerald-500 text-white'
-          : 'bg-white hover:bg-zinc-200 text-black'
+      disabled={disabled}
+      className={`relative overflow-hidden font-semibold transition-all shadow-md active:shadow-sm flex items-center justify-center gap-2 ${
+        disabled
+          ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-white/5 opacity-70'
+          : isAdded
+          ? 'bg-emerald-500 text-white cursor-pointer'
+          : 'bg-white hover:bg-zinc-200 text-black cursor-pointer'
       } ${
         compact
           ? 'px-4 py-2 text-xs rounded-xl'

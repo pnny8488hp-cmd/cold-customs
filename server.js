@@ -32,6 +32,33 @@ function writeOrders(orders) {
   fs.writeFileSync(ordersFile, JSON.stringify(orders, null, 2), 'utf-8');
 }
 
+const stockFile = path.join(dataDir, 'stock.json');
+
+function readStock() {
+  try {
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+    if (!fs.existsSync(stockFile)) {
+      const initial = { stock: 10, updatedAt: new Date().toISOString() };
+      fs.writeFileSync(stockFile, JSON.stringify(initial, null, 2), 'utf-8');
+      return initial;
+    }
+    const content = fs.readFileSync(stockFile, 'utf-8');
+    return JSON.parse(content || '{"stock": 10}');
+  } catch {
+    return { stock: 10, updatedAt: new Date().toISOString() };
+  }
+}
+
+function writeStock(count) {
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  const data = { 
+    stock: Math.max(0, parseInt(count, 10) || 0), 
+    updatedAt: new Date().toISOString() 
+  };
+  fs.writeFileSync(stockFile, JSON.stringify(data, null, 2), 'utf-8');
+  return data;
+}
+
 function getExpectedSecret() {
   return process.env.ADMIN_PASSWORD || process.env.ADMIN_PIN || 'MojeHasloUBB2026!';
 }
@@ -208,12 +235,48 @@ app.post('/api/orders', async (req, res) => {
     };
     orders.unshift(newOrder);
     writeOrders(orders);
+
+    // Automatycznie zaktualizuj stan magazynowy po złożeniu zamówienia
+    try {
+      const orderQty = Number(newOrder.items?.quantity) || 1;
+      const currentStock = readStock();
+      writeStock(Math.max(0, currentStock.stock - orderQty));
+    } catch {}
+
     sendOrderNotificationEmail(newOrder).catch(() => {});
     sendToGoogleSheets(newOrder).catch(() => {});
     res.json({ success: true, order: newOrder });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// ─── API: Stock (Stan magazynowy) ───────────────────────────────────────────
+// GET /api/stock – publiczny stan magazynowy
+app.get('/api/stock', (req, res) => {
+  try {
+    const data = readStock();
+    res.json(data);
+  } catch {
+    res.json({ stock: 10 });
+  }
+});
+
+// POST /api/stock – zmiana stanu magazynowego z panelu admina (chroniona)
+app.post('/api/stock', (req, res) => {
+  const submitted = req.headers['x-admin-password'] || req.headers['x-admin-pin'] || req.query.pin || req.query.password;
+  const expected = getExpectedSecret().trim();
+  if (submitted !== expected) {
+    return res.status(401).json({ error: 'Dostęp chroniony hasłem' });
+  }
+
+  const { stock } = req.body || {};
+  if (stock === undefined || isNaN(Number(stock))) {
+    return res.status(400).json({ error: 'Nieprawidłowa liczba sztuk' });
+  }
+
+  const updated = writeStock(Number(stock));
+  res.json({ success: true, ...updated });
 });
 
 // GET /api/orders – chroniony hasłem

@@ -10,15 +10,21 @@ import { Order } from '../types/order';
 interface OrdersSheetModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onStockChange?: () => void;
 }
 
-export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onClose }) => {
+export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onClose, onStockChange }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [editingTracking, setEditingTracking] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
+
+  // Stock inventory management
+  const [stock, setStock] = useState<number | string>(10);
+  const [savingStock, setSavingStock] = useState(false);
+  const [stockSavedMessage, setStockSavedMessage] = useState(false);
 
   // Authentication Password state
   const [password, setPassword] = useState('');
@@ -31,6 +37,20 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
   const MONTHLY_LIMIT = 3500;
 
   const getSavedPin = () => sessionStorage.getItem('ubb_admin_pin') || '';
+
+  const fetchStock = async () => {
+    try {
+      const res = await fetch('/api/stock');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.stock !== undefined) {
+          setStock(data.stock);
+        }
+      }
+    } catch (e) {
+      console.error('Błąd pobierania stanu magazynowego:', e);
+    }
+  };
 
   const fetchOrders = async (overridePin?: string) => {
     const currentPin = overridePin || getSavedPin();
@@ -45,6 +65,7 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
         const data = await res.json();
         setOrders(data.orders || []);
         setIsAuthenticated(true);
+        fetchStock();
       } else if (res.status === 401) {
         setIsAuthenticated(false);
         sessionStorage.removeItem('ubb_admin_pin');
@@ -159,6 +180,45 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
   const handleExportCSV = () => {
     const pin = getSavedPin();
     window.open(`/api/orders/export-csv?pin=${encodeURIComponent(pin)}`, '_blank');
+  };
+
+  const handleSaveStock = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const pin = getSavedPin();
+    if (!pin) return;
+
+    const parsedStock = parseInt(String(stock), 10);
+    if (isNaN(parsedStock) || parsedStock < 0) {
+      alert('Podaj prawidłową liczbę sztuk (0 lub więcej).');
+      return;
+    }
+
+    setSavingStock(true);
+    try {
+      const res = await fetch('/api/stock', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-pin': pin,
+          'x-admin-password': pin,
+        },
+        body: JSON.stringify({ stock: parsedStock }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setStock(data.stock);
+        setStockSavedMessage(true);
+        onStockChange?.();
+        setTimeout(() => setStockSavedMessage(false), 2500);
+      } else {
+        alert('Nie udało się zapisać stanu magazynowego.');
+      }
+    } catch {
+      alert('Błąd połączenia podczas zapisu stanu magazynowego.');
+    } finally {
+      setSavingStock(false);
+    }
   };
 
   const handleDeleteOrder = async (orderId: string) => {
@@ -302,6 +362,39 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
 
               {/* Quick stats and Limit badge */}
               <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+                {/* Stock management input */}
+                <div className="px-3.5 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-xs flex items-center gap-2">
+                  <div>
+                    <span className="text-zinc-400 block text-[10px] uppercase font-semibold">
+                      Dostępne sztuki:
+                    </span>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <input
+                        type="number"
+                        min="0"
+                        value={stock}
+                        onChange={(e) => setStock(e.target.value)}
+                        className="w-14 px-2 py-0.5 bg-zinc-950 border border-white/15 rounded-lg text-xs font-bold text-white text-center tabular-nums focus:outline-none focus:border-emerald-500"
+                        title="Liczba dostępnych sztuk na magazynie"
+                      />
+                      <span className="text-[11px] text-zinc-400">szt.</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleSaveStock()}
+                    disabled={savingStock}
+                    className={`px-2.5 py-1.5 font-bold text-xs rounded-lg transition-all cursor-pointer shadow-sm self-end mb-0.5 ${
+                      stockSavedMessage
+                        ? 'bg-emerald-500 text-black font-extrabold'
+                        : 'bg-zinc-800 hover:bg-zinc-700 text-white border border-white/10 hover:border-emerald-500/50'
+                    } disabled:opacity-50`}
+                    title="Zapisz aktualny stan magazynowy"
+                  >
+                    {savingStock ? '...' : stockSavedMessage ? '✓ Zapisano' : 'Zapisz'}
+                  </button>
+                </div>
+
                 <div className="px-3.5 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-xs">
                   <span className="text-zinc-400 block text-[10px] uppercase font-semibold">
                     Suma w tym miesiącu:

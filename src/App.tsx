@@ -20,10 +20,29 @@ function StoreContent() {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [orderSuccessData, setOrderSuccessData] = useState<OrderSuccessData | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [stock, setStock] = useState<number | null>(null);
   const [isCartBouncing, setIsCartBouncing] = useState(false);
   const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
   const [initialCheckoutStep, setInitialCheckoutStep] = useState<'checkout' | 'confirmation'>('checkout');
   const { images } = useProductImages();
+
+  const fetchStock = async () => {
+    try {
+      const res = await fetch('/api/stock');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.stock !== undefined) {
+          setStock(data.stock);
+        }
+      }
+    } catch {}
+  };
+
+  React.useEffect(() => {
+    fetchStock();
+    const interval = setInterval(fetchStock, 20000);
+    return () => clearInterval(interval);
+  }, []);
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -123,6 +142,7 @@ function StoreContent() {
           onOpenCheckout={handleOpenCheckout}
           onOpenUploader={handleOpenUploader}
           onAddToCart={handleAddToCart}
+          stock={stock}
         />
         <KitContents
           onOpenCheckout={handleOpenCheckout}
@@ -138,6 +158,7 @@ function StoreContent() {
       <OrdersSheetModal
         isOpen={isOrdersSheetOpen}
         onClose={() => setIsOrdersSheetOpen(false)}
+        onStockChange={fetchStock}
       />
 
       {/* Flying to Cart Framer Motion Animation */}

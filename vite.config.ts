@@ -179,6 +179,33 @@ function ordersManagementPlugin() {
     fs.writeFileSync(ordersFile, JSON.stringify(orders, null, 2), 'utf-8');
   }
 
+  const stockFile = path.join(dataDir, 'stock.json');
+
+  function readStock(): { stock: number; updatedAt: string } {
+    try {
+      if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+      if (!fs.existsSync(stockFile)) {
+        const initial = { stock: 10, updatedAt: new Date().toISOString() };
+        fs.writeFileSync(stockFile, JSON.stringify(initial, null, 2), 'utf-8');
+        return initial;
+      }
+      const content = fs.readFileSync(stockFile, 'utf-8');
+      return JSON.parse(content || '{"stock": 10}');
+    } catch {
+      return { stock: 10, updatedAt: new Date().toISOString() };
+    }
+  }
+
+  function writeStock(count: number): { stock: number; updatedAt: string } {
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+    const data = {
+      stock: Math.max(0, parseInt(String(count), 10) || 0),
+      updatedAt: new Date().toISOString(),
+    };
+    fs.writeFileSync(stockFile, JSON.stringify(data, null, 2), 'utf-8');
+    return data;
+  }
+
   async function sendOrderNotificationEmail(order: any) {
     const notificationEmail = process.env.NOTIFICATION_EMAIL;
     const smtpUser = process.env.SMTP_USER;
@@ -316,6 +343,47 @@ Status: ${order.payment?.status}`,
         }
       });
 
+      // API: Stock count
+      server.middlewares.use('/api/stock', (req: any, res: any) => {
+        if (req.method === 'GET') {
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          return res.end(JSON.stringify(readStock()));
+        }
+
+        if (req.method === 'POST') {
+          const parsedUrl = new URL(req.url, 'http://localhost');
+          const submitted = req.headers['x-admin-password'] || req.headers['x-admin-pin'] || parsedUrl.searchParams.get('pin') || parsedUrl.searchParams.get('password');
+          const expected = getExpectedSecret().trim();
+
+          if (submitted !== expected) {
+            res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+            return res.end(JSON.stringify({ error: 'Brak uprawnień. Nieprawidłowe hasło.' }));
+          }
+
+          let body = '';
+          req.on('data', (c: any) => { body += c; });
+          req.on('end', () => {
+            try {
+              const { stock } = JSON.parse(body || '{}');
+              if (stock === undefined || isNaN(Number(stock))) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify({ error: 'Nieprawidłowa liczba sztuk' }));
+              }
+              const updated = writeStock(Number(stock));
+              res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ success: true, ...updated }));
+            } catch (err: any) {
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: err.message }));
+            }
+          });
+          return;
+        }
+
+        res.writeHead(405);
+        res.end();
+      });
+
       // Verify admin Password with rate-limiting
       server.middlewares.use('/api/orders/verify-pin', (req: any, res: any) => {
         if (req.method !== 'POST') {
@@ -417,6 +485,12 @@ Status: ${order.payment?.status}`,
 
               orders.unshift(newOrder);
               writeOrders(orders);
+
+              try {
+                const orderQty = Number(newOrder.items?.quantity) || 1;
+                const currentStock = readStock();
+                writeStock(Math.max(0, currentStock.stock - orderQty));
+              } catch {}
 
               sendOrderNotificationEmail(newOrder).catch(() => {});
               sendToGoogleSheets(newOrder).catch(() => {});
