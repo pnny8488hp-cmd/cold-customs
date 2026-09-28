@@ -2,6 +2,7 @@
 // Serves the built React app + all /api/* endpoints
 // Run: node server.js
 
+import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
@@ -426,12 +427,3 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🔐 Panel admina: Ctrl+Shift+O (hasło: ${getExpectedSecret()})\n`);
 });
 
-if (PORT !== 8080 && process.env.RAILWAY_ENVIRONMENT) {
-  try {
-    app.listen(8080, '0.0.0.0', () => {
-      console.log(`🚀 Backup listener na porcie 8080 (0.0.0.0) aktywny`);
-    });
-  } catch (e) {
-    // Port może być zajęty
-  }
-}

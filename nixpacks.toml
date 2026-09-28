@@ -1,5 +1,5 @@
-[phases.setup]
-nixPkgs = ["nodejs_22"]
+[variables]
+NIXPACKS_NODE_VERSION = "22.14.0"
 
 [phases.install]
 cmds = ["npm install --include=dev"]
@@ -9,4 +9,3 @@ cmds = ["npm run build"]
 
 [start]
 cmd = "node server.js"
-
