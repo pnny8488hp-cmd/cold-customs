@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Upload, Check, RefreshCw, X, Server, Camera, Trash2 } from 'lucide-react';
-import { useProductImages, ImageSlots, FitMode } from '../context/ImageContext';
+import { useProductImages, ImageSlots, FitMode, defaultImages } from '../context/ImageContext';
 
 interface OriginalImageDropzoneProps {
   isOpen: boolean;
@@ -138,11 +138,13 @@ export const OriginalImageDropzone: React.FC<OriginalImageDropzoneProps> = ({
   };
 
   const slotLabels: { key: keyof ImageSlots; label: string; desc: string }[] = [
-    { key: 'kit', label: '1. Cały zestaw (Główne)', desc: 'Zdjęcie kompletu: tarcza, zacisk, klamka, przewód' },
+    { key: 'kit', label: '1. Cały zestaw Ultra Bee Brakes (Główne)', desc: 'Zdjęcie kompletu: tarcza, zacisk, klamka, przewód' },
     { key: 'lever', label: '2. Klamka i pompa', desc: 'Lewa klamka ze zbiorniczkiem i pompą' },
     { key: 'caliper', label: '3. Zacisk 2-tłoczkowy', desc: 'Aluminiowy zacisk hamulcowy z klockami' },
     { key: 'rotor', label: '4. Tarcza 240 mm', desc: 'Stalowa tarcza 240 mm o grubości 3,2 mm' },
     { key: 'guard', label: '5. Wspornik CNC', desc: 'Czarny frezowany adapter zacisku' },
+    { key: 'plateClean', label: '6. Front Plate (Bez naklejki)', desc: 'Czysta czarna tablica ze zintegrowanymi siatkami (119 zł)' },
+    { key: 'plateSticker', label: '7. Front Plate (Z okleiną #1)', desc: 'Tablica z fabrycznie naklejoną okleiną gratis (119 zł)' },
   ];
 
   return (
@@ -269,7 +271,7 @@ export const OriginalImageDropzone: React.FC<OriginalImageDropzoneProps> = ({
                 </span>
                 
                 {slotLabels.map(({ key, label, desc }) => {
-                  const isCustom = !images[key].includes('exact_');
+                  const isCustom = images[key] !== defaultImages[key];
                   const isUploading = activeSlotUploading === key;
 
                   return (

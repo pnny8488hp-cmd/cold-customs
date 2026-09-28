@@ -4,6 +4,8 @@ import defaultLever from '../assets/images/lever.png';
 import defaultCaliper from '../assets/images/caliper.png';
 import defaultRotor from '../assets/images/rotor.png';
 import defaultGuard from '../assets/images/guard.png';
+import defaultPlateClean from '../assets/images/plate_clean.svg';
+import defaultPlateSticker from '../assets/images/plate_sticker.svg';
 
 export interface ImageSlots {
   kit: string;
@@ -11,6 +13,8 @@ export interface ImageSlots {
   caliper: string;
   rotor: string;
   guard: string;
+  plateClean: string;
+  plateSticker: string;
 }
 
 export type FitMode = 'cover' | 'contain';
@@ -34,9 +38,10 @@ export const defaultImages: ImageSlots = {
   caliper: defaultCaliper,
   rotor: defaultRotor,
   guard: defaultGuard,
+  plateClean: defaultPlateClean,
+  plateSticker: defaultPlateSticker,
 };
 
-// IndexedDB persistence helper for heavy user-uploaded image binaries
 const DB_NAME = 'ColdCustomsImageStorage';
 const STORE_NAME = 'user_images';
 
@@ -45,7 +50,7 @@ function openImagesDB(): Promise<IDBDatabase> {
     if (typeof indexedDB === 'undefined') {
       return reject(new Error('IndexedDB not supported'));
     }
-    const req = indexedDB.open(DB_NAME, 1);
+    const req = indexedDB.open(DB_NAME, 2);
     req.onupgradeneeded = () => {
       if (!req.result.objectStoreNames.contains(STORE_NAME)) {
         req.result.createObjectStore(STORE_NAME);
@@ -62,7 +67,7 @@ async function getStoredImagesFromIDB(): Promise<Partial<ImageSlots>> {
     return new Promise((resolve) => {
       const tx = db.transaction(STORE_NAME, 'readonly');
       const store = tx.objectStore(STORE_NAME);
-      const slots: (keyof ImageSlots)[] = ['kit', 'lever', 'caliper', 'rotor', 'guard'];
+      const slots: (keyof ImageSlots)[] = ['kit', 'lever', 'caliper', 'rotor', 'guard', 'plateClean', 'plateSticker'];
       const result: Partial<ImageSlots> = {};
       let remaining = slots.length;
 
@@ -153,7 +158,7 @@ export const applyChromaKey = (
 };
 
 export const ImageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Always default to the uploaded assets
+  // Real authentic photography defaults
   const [images, setImages] = useState<ImageSlots>(defaultImages);
 
   const [fitMode, setFitMode] = useState<FitMode>(() => {
@@ -163,7 +168,7 @@ export const ImageProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [useChromaKey, setUseChromaKey] = useState<boolean>(false);
   const [isCustomLoaded, setIsCustomLoaded] = useState<boolean>(true);
 
-  // Load from IndexedDB and server on mount
+  // Load from server and IndexedDB
   const refreshFromServer = async () => {
     try {
       const res = await fetch('/api/save-original-images');
@@ -184,19 +189,17 @@ export const ImageProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
       }
     } catch {
-      // Safe fallback, defaults are already rendered
+      // Safe fallback
     }
   };
 
   useEffect(() => {
     let active = true;
     const initializeStorage = async () => {
-      // 1. Check IndexedDB
       const idbImages = await getStoredImagesFromIDB();
       if (active && Object.keys(idbImages).length > 0) {
         setImages((prev) => ({ ...prev, ...idbImages }));
       }
-      // 2. Sync with dev server filesystem if available
       if (active) {
         await refreshFromServer();
       }
@@ -237,14 +240,14 @@ export const ImageProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             });
           }
 
-          // 1. Update React state immediately so user sees their photo right away
+          // Update state immediately
           setImages((prev) => ({ ...prev, [slot]: finalDataUrl }));
           setIsCustomLoaded(true);
 
-          // 2. Persist to IndexedDB so page reload preserves it
+          // Persist to IndexedDB
           await saveImageToIDB(slot, finalDataUrl);
 
-          // 3. Try server filesystem save
+          // Persist to server
           try {
             const finalExt = applyKeying ? 'png' : (ext || 'png');
             const res = await fetch('/api/save-original-images', {
@@ -263,9 +266,7 @@ export const ImageProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 setImages((prev) => ({ ...prev, [slot]: result.url }));
               }
             }
-          } catch {
-            // Server error is safely ignored because IndexedDB already has it
-          }
+          } catch {}
 
           resolve(finalDataUrl);
         } catch (err) {
@@ -294,24 +295,27 @@ export const ImageProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const results: { slot: string; success: boolean }[] = [];
     const fileList = Array.from(files);
 
-    const allSlots: (keyof ImageSlots)[] = ['kit', 'lever', 'caliper', 'rotor', 'guard'];
+    const allSlots: (keyof ImageSlots)[] = ['kit', 'lever', 'caliper', 'rotor', 'guard', 'plateClean', 'plateSticker'];
     const assignedSlots = new Set<keyof ImageSlots>();
 
-    // Pass 1: Try keyword matching
     const unassignedFiles: File[] = [];
     for (const file of fileList) {
       const name = file.name.toLowerCase();
       let matchedSlot: keyof ImageSlots | null = null;
 
-      if (name.includes('2793') || name.includes('lever') || name.includes('klamka') || name.includes('pompa')) {
+      if (name.includes('plate') && (name.includes('sticker') || name.includes('oklein') || name.includes('naklejk'))) {
+        matchedSlot = 'plateSticker';
+      } else if (name.includes('plate') || name.includes('tablic')) {
+        matchedSlot = 'plateClean';
+      } else if (name.includes('lever') || name.includes('klamka') || name.includes('pompa')) {
         matchedSlot = 'lever';
-      } else if (name.includes('2794') || name.includes('caliper') || name.includes('zacisk')) {
+      } else if (name.includes('caliper') || name.includes('zacisk')) {
         matchedSlot = 'caliper';
-      } else if (name.includes('2795') || name.includes('rotor') || name.includes('tarcza')) {
+      } else if (name.includes('rotor') || name.includes('tarcza')) {
         matchedSlot = 'rotor';
-      } else if (name.includes('2796') || name.includes('guard') || name.includes('wspornik') || name.includes('oslona') || name.includes('adapter')) {
+      } else if (name.includes('guard') || name.includes('wspornik') || name.includes('oslona') || name.includes('adapter')) {
         matchedSlot = 'guard';
-      } else if (name.includes('unnamed') || name.includes('kit') || name.includes('zestaw') || name.includes('calosc')) {
+      } else if (name.includes('kit') || name.includes('zestaw') || name.includes('calosc')) {
         matchedSlot = 'kit';
       }
 
@@ -328,7 +332,6 @@ export const ImageProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     }
 
-    // Pass 2: For any unassigned files, assign them to remaining unassigned slots
     const remainingSlots = allSlots.filter((s) => !assignedSlots.has(s));
     for (let i = 0; i < unassignedFiles.length; i++) {
       const targetSlot = remainingSlots[i] || allSlots[i % allSlots.length];
@@ -349,7 +352,7 @@ export const ImageProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       await fetch('/api/save-original-images', { method: 'DELETE' });
     } catch {}
     await clearImagesIDB();
-    ['kit', 'lever', 'caliper', 'rotor', 'guard'].forEach((s) => {
+    ['kit', 'lever', 'caliper', 'rotor', 'guard', 'plateClean', 'plateSticker'].forEach((s) => {
       localStorage.removeItem(`ubb_orig_${s}`);
     });
     setImages(defaultImages);

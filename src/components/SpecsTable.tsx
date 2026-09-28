@@ -1,14 +1,18 @@
 import React from 'react';
-import { PRODUCT_INFO } from '../data/productData';
+import { ProductItem, PRODUCT_INFO } from '../data/productData';
 import { ShieldCheck, Truck, Package } from 'lucide-react';
 import { AddToCartButton } from './AddToCartButton';
 
 interface SpecsTableProps {
+  activeProduct?: ProductItem;
   onOpenCheckout: () => void;
   onAddToCart: (rect: DOMRect) => void;
 }
 
-export const SpecsTable: React.FC<SpecsTableProps> = ({ onOpenCheckout, onAddToCart }) => {
+export const SpecsTable: React.FC<SpecsTableProps> = ({
+  activeProduct = PRODUCT_INFO,
+  onAddToCart,
+}) => {
   return (
     <section id="specs" className="py-24 bg-[#08080b] border-t border-white/5">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -31,17 +35,19 @@ export const SpecsTable: React.FC<SpecsTableProps> = ({ onOpenCheckout, onAddToC
         <div className="rounded-3xl bg-zinc-900/60 border border-white/10 overflow-hidden shadow-2xl">
           <div className="p-6 sm:p-8 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <span className="text-xs font-medium text-zinc-400 block">Produkt</span>
-              <h3 className="text-xl font-bold text-white">Ultra Bee Brakes</h3>
+              <span className="text-xs font-medium text-zinc-400 block">{activeProduct.category}</span>
+              <h3 className="text-xl font-bold text-white">{activeProduct.name}</h3>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <span className="text-xs text-zinc-400 block">Cena zestawu (promocja)</span>
-                <span className="text-2xl font-extrabold text-white tabular-nums">799 zł</span>
+                <span className="text-xs text-zinc-400 block">Cena zestawu</span>
+                <span className="text-2xl font-extrabold text-white tabular-nums">
+                  {activeProduct.price} {activeProduct.currency}
+                </span>
               </div>
               <AddToCartButton
                 onAdd={onAddToCart}
-                price={799}
+                price={activeProduct.price}
                 label="Dodaj"
                 compact
               />
@@ -50,7 +56,7 @@ export const SpecsTable: React.FC<SpecsTableProps> = ({ onOpenCheckout, onAddToC
 
           {/* Table rows */}
           <div className="divide-y divide-white/5">
-            {PRODUCT_INFO.technicalSpecs.map((spec, index) => (
+            {activeProduct.technicalSpecs.map((spec, index) => (
               <div
                 key={index}
                 className="grid grid-cols-1 sm:grid-cols-12 px-6 sm:px-8 py-4.5 hover:bg-white/[0.02] transition-colors"
@@ -69,7 +75,7 @@ export const SpecsTable: React.FC<SpecsTableProps> = ({ onOpenCheckout, onAddToC
           <div className="p-6 bg-zinc-950/80 border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-zinc-400">
             <div className="flex items-center gap-2.5">
               <Truck className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>Darmowa wysyłka kurierem / paczkomatem</span>
+              <span>{activeProduct.price >= 399 ? 'Darmowa wysyłka kurierem / Paczkomatem' : 'Darmowa wysyłka od 399 zł'}</span>
             </div>
             <div className="flex items-center gap-2.5">
               <ShieldCheck className="w-4 h-4 text-white shrink-0" />

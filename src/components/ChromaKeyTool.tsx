@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Sparkles, Sliders, Upload, RefreshCw, Eye } from 'lucide-react';
-import kitImg from '../assets/images/exact_kit_1790439028601.jpg';
+import kitImg from '../assets/images/kit.png';
 
 interface ChromaKeyToolProps {
   onOpenCheckout: () => void;

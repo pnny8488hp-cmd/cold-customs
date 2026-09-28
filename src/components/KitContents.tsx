@@ -2,57 +2,71 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Check, Eye, RotateCcw } from 'lucide-react';
 import { useProductImages, defaultImages } from '../context/ImageContext';
+import { ProductItem } from '../data/productData';
 
 interface KitContentsProps {
+  activeProduct: ProductItem;
   onOpenCheckout: () => void;
-  onAddToCart: (rect: DOMRect, image?: string) => void;
+  onAddToCart: (rect: DOMRect, product: ProductItem) => void;
 }
 
 export const KitContents: React.FC<KitContentsProps> = ({
+  activeProduct,
   onOpenCheckout,
 }) => {
   const { images } = useProductImages();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  const kitContentsList = [
-    {
-      id: 'lever',
-      title: 'Klamka hamulcowa (lewa) z pompą i zbiorniczkiem',
-      shortName: 'Klamka & Pompa',
-      desc: 'Ergonomiczna klamka z pompą i zintegrowanym zbiorniczkiem na płyn hamulcowy DOT 4 / 5.1.',
-      image: images.lever,
-      defaultImg: defaultImages.lever,
-    },
-    {
-      id: 'caliper',
-      title: 'Zacisk hamulcowy z klockami',
-      shortName: 'Zacisk 2-tłoczkowy',
-      desc: 'Aluminiowy zacisk dwutłoczkowy o dużej pojemności cieplnej z fabrycznymi klockami.',
-      image: images.caliper,
-      defaultImg: defaultImages.caliper,
-    },
-    {
-      id: 'guard',
-      title: 'Wspornik / adapter montażowy zacisku',
-      shortName: 'Adapter & Osłona CNC',
-      desc: 'Frezowany CNC wspornik ze stopu aluminium zintegrowany z osłoną.',
-      image: images.guard,
-      defaultImg: defaultImages.guard,
-    },
-    {
-      id: 'rotor',
-      title: 'Tarcza hamulcowa 240 mm (grubość 3,2 mm)',
-      shortName: 'Tarcza 240 mm (3,2 mm)',
-      desc: 'Gruba tarcza wentylowana o średnicy 240 mm i grubości 3,2 mm.',
-      image: images.rotor,
-      defaultImg: defaultImages.rotor,
-    },
-  ];
+  const isUltraBee = activeProduct.id === 'ultra-bee-brakes';
 
-  const activeItem = selectedIndex !== null ? kitContentsList[selectedIndex] : null;
-  const currentBigImage = activeItem ? activeItem.image : images.kit;
-  const currentFallback = activeItem ? activeItem.defaultImg : defaultImages.kit;
-  const currentTitle = activeItem ? activeItem.title : 'Kompletny zestaw Ultra Bee Brakes';
+  const defaultKitContents = isUltraBee
+    ? [
+        {
+          id: 'lever',
+          title: 'Klamka hamulcowa (lewa) z pompą i zbiorniczkiem',
+          shortName: 'Klamka & Pompa',
+          desc: 'Ergonomiczna klamka z pompą i zintegrowanym zbiorniczkiem na płyn hamulcowy DOT 4 / 5.1.',
+          image: images.lever,
+          defaultImg: defaultImages.lever,
+        },
+        {
+          id: 'caliper',
+          title: 'Zacisk hamulcowy z klockami',
+          shortName: 'Zacisk 2-tłoczkowy',
+          desc: 'Aluminiowy zacisk dwutłoczkowy o dużej pojemności cieplnej z fabrycznymi klockami.',
+          image: images.caliper,
+          defaultImg: defaultImages.caliper,
+        },
+        {
+          id: 'guard',
+          title: 'Wspornik / adapter montażowy zacisku',
+          shortName: 'Adapter & Osłona CNC',
+          desc: 'Frezowany CNC wspornik ze stopu aluminium zintegrowany z osłoną.',
+          image: images.guard,
+          defaultImg: defaultImages.guard,
+        },
+        {
+          id: 'rotor',
+          title: 'Tarcza hamulcowa 240 mm (grubość 3,2 mm)',
+          shortName: 'Tarcza 240 mm (3,2 mm)',
+          desc: 'Gruba tarcza wentylowana o średnicy 240 mm i grubości 3,2 mm.',
+          image: images.rotor,
+          defaultImg: defaultImages.rotor,
+        },
+      ]
+    : activeProduct.kitContents.map((kc, idx) => ({
+        id: `kc-${idx}`,
+        title: kc.title,
+        shortName: kc.title.split(' ')[0],
+        desc: kc.desc,
+        image: kc.image,
+        defaultImg: kc.image,
+      }));
+
+  const activeItem = selectedIndex !== null ? defaultKitContents[selectedIndex] : null;
+  const currentBigImage = activeItem ? activeItem.image : (isUltraBee ? images.kit : activeProduct.image);
+  const currentFallback = activeItem ? activeItem.defaultImg : (isUltraBee ? defaultImages.kit : activeProduct.image);
+  const currentTitle = activeItem ? activeItem.title : activeProduct.name;
   const currentBadge = activeItem ? activeItem.shortName : 'Cały zestaw (wszystkie elementy)';
 
   const handleTileClick = (index: number) => {
@@ -73,14 +87,14 @@ export const KitContents: React.FC<KitContentsProps> = ({
                 className="text-3xl sm:text-4xl font-bold tracking-tight text-white mb-4"
                 style={{ textWrap: 'balance' }}
               >
-                Zestaw Ultra Bee Brakes.
+                {activeProduct.name}.
               </h2>
               <p className="text-zinc-400 text-sm leading-relaxed mb-6">
-                Wszystko, czego potrzebujesz do kompletnego montażu: fabrycznie zalany płynem i odpowietrzony układ z połączonym wzmocnionym przewodem. Kliknij dowolny element z listy obok, aby obejrzeć detal.
+                Wszystko, czego potrzebujesz do kompletnego montażu: fabrycznie przygotowany układ ze wszystkimi złączami i elementami montażowymi. Kliknij dowolny element z listy obok, aby obejrzeć detal.
               </p>
 
               {/* Kit Interactive Large Image Card */}
-              <div className="relative rounded-2xl bg-zinc-900/60 border border-white/10 mb-5 overflow-hidden aspect-square shadow-2xl group">
+              <div className="relative rounded-2xl bg-zinc-900 border border-white/10 mb-5 overflow-hidden aspect-square shadow-2xl group">
                 {/* Active Element Badge and Reset */}
                 <div className="absolute top-3.5 left-3.5 right-3.5 z-10 flex items-center justify-between gap-2 pointer-events-none">
                   <span className="text-[11px] font-semibold text-white bg-black/80 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 shadow-md">
@@ -100,7 +114,7 @@ export const KitContents: React.FC<KitContentsProps> = ({
 
                 <AnimatePresence mode="wait">
                   <motion.img
-                    key={selectedIndex !== null ? kitContentsList[selectedIndex].id : 'all-kit'}
+                    key={selectedIndex !== null ? defaultKitContents[selectedIndex].id : `${activeProduct.id}-all`}
                     src={currentBigImage}
                     alt={currentTitle}
                     initial={{ opacity: 0.35, scale: 0.98 }}
@@ -119,21 +133,21 @@ export const KitContents: React.FC<KitContentsProps> = ({
               {/* Quick Spec Highlights */}
               <div className="grid grid-cols-2 gap-2 text-xs mb-5">
                 <div className="p-2.5 rounded-xl bg-zinc-900/50 border border-white/5">
-                  <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Tarcza w zestawie</span>
-                  <span className="text-zinc-200 font-semibold">240 mm / 3,2 mm</span>
+                  <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Stan układu</span>
+                  <span className="text-zinc-200 font-semibold">Gotowy do montażu</span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-zinc-900/50 border border-white/5">
-                  <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Zacisk hamulcowy</span>
-                  <span className="text-zinc-200 font-semibold">2-tłoczkowy CNC</span>
+                  <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Kategoria</span>
+                  <span className="text-zinc-200 font-semibold">{activeProduct.category}</span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-zinc-900/50 border border-white/5">
-                  <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Przewód w zestawie</span>
-                  <span className="text-zinc-200 font-semibold">Wzmocniony zbrojony</span>
+                  <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Płyn roboczy</span>
+                  <span className="text-zinc-200 font-semibold">DOT 4 / DOT 5.1</span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-zinc-900/50 border border-white/5">
-                  <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Kompatybilność Plug & Play</span>
-                  <span className="text-emerald-400 font-semibold text-[11px] block truncate" title="Surron · 79 Bike · E-Ride Pro · Ventus · Talaria">
-                    Surron · 79 Bike · E-Ride · Ventus · Talaria
+                  <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Gwarancja zadowolenia</span>
+                  <span className="text-emerald-400 font-semibold text-[11px] block truncate">
+                    14 dni na bezproblemowy zwrot
                   </span>
                 </div>
               </div>
@@ -142,35 +156,45 @@ export const KitContents: React.FC<KitContentsProps> = ({
               <div className="p-4 rounded-xl bg-zinc-900/60 border border-white/10 space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-[11px] text-zinc-400 block font-medium">Cena promocyjna zestawu</span>
+                    <span className="text-[11px] text-zinc-400 block font-medium">Cena promocyjna</span>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-xl font-extrabold text-white tabular-nums">799 zł</span>
-                      <span className="text-xs text-zinc-500 line-through tabular-nums">849 zł</span>
+                      <span className="text-xl font-extrabold text-white tabular-nums">
+                        {activeProduct.price} {activeProduct.currency}
+                      </span>
+                      {activeProduct.originalPrice > activeProduct.price && (
+                        <span className="text-xs text-zinc-500 line-through tabular-nums">
+                          {activeProduct.originalPrice} {activeProduct.currency}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                    -50 zł taniej
-                  </span>
+                  {activeProduct.discount > 0 && (
+                    <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                      -{activeProduct.discount} zł taniej
+                    </span>
+                  )}
                 </div>
                 <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs text-zinc-300">
                   <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
                     <Check className="w-3.5 h-3.5 text-emerald-400" />
                     14 dni na bezproblemowy zwrot
                   </span>
-                  <span className="text-[11px] text-zinc-500">Darmowa wysyłka</span>
+                  <span className="text-[11px] text-zinc-500">
+                    {activeProduct.price >= 399 ? 'Darmowa wysyłka' : 'Wysyłka od 399 zł gratis'}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column: 5 Interactive Kit Items List */}
+          {/* Right Column: Interactive Kit Items List */}
           <div className="lg:col-span-7 space-y-3.5">
             <div className="flex items-center justify-between text-xs text-zinc-400 mb-1 px-1">
               <span className="font-semibold uppercase tracking-wider text-[11px]">Elementy w zestawie</span>
               <span className="text-zinc-500 text-[11px]">Kliknij kafelek, aby zmienić duże zdjęcie</span>
             </div>
 
-            {kitContentsList.map((item, index) => {
+            {defaultKitContents.map((item, index) => {
               const num = String(index + 1).padStart(2, '0');
               const isSelected = selectedIndex === index;
 
@@ -234,7 +258,7 @@ export const KitContents: React.FC<KitContentsProps> = ({
                   <Check className="w-4 h-4" />
                 </div>
                 <div className="text-xs">
-                  <span className="text-white font-medium block">Darmowa dostawa w cenie</span>
+                  <span className="text-white font-medium block">Darmowa dostawa od 399 zł</span>
                   <span className="text-zinc-400">Paczkomat InPost lub Kurier pod drzwi</span>
                 </div>
               </div>

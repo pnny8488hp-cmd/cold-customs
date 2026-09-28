@@ -147,7 +147,7 @@ export const LiveSalesToast: React.FC<LiveSalesToastProps> = ({
                 <img
                   src={images.kit}
                   alt="Cold Customs Kit"
-                  className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                 />
                 <span className="absolute -top-1 -right-1 flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />

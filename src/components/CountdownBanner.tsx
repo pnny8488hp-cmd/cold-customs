@@ -30,10 +30,10 @@ export const CountdownBanner: React.FC = () => {
   return (
     <div className="fixed top-0 left-0 right-0 z-50 h-[44px] flex items-center justify-center gap-3 bg-zinc-900 border-b border-white/8 px-4">
       <Timer className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-      <p className="text-xs sm:text-sm text-zinc-400">
-        Cena promocyjna{' '}
-        <span className="font-semibold text-white">799 zł</span>
-        {' '}kończy się za
+      <p className="text-xs sm:text-sm text-zinc-400 truncate">
+        <span className="text-emerald-400 font-semibold mr-1.5 hidden sm:inline">Darmowa wysyłka od 399 zł</span>
+        <span className="hidden sm:inline text-zinc-600 mr-1.5">·</span>
+        Ceny promocyjne kończą się za
       </p>
       <div className="flex items-center gap-1">
         {[pad(h), pad(m), pad(s)].map((unit, i) => (

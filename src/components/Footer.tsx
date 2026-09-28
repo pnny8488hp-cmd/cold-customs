@@ -14,12 +14,15 @@ export const Footer: React.FC<FooterProps> = ({ onOpenOrdersSheet }) => {
               COLD CUSTOMS
             </span>
             <span className="text-zinc-600">/</span>
-            <span>Układy hamulcowe Sur-Ron Ultra Bee</span>
+            <span>Wyczynowe komponenty motocyklowe</span>
           </div>
 
           <div className="flex items-center gap-6 text-zinc-400">
             <a href="#overview" className="hover:text-white transition-colors">
               Przegląd
+            </a>
+            <a href="#catalog" className="hover:text-white transition-colors">
+              Katalog
             </a>
             <a href="#package" className="hover:text-white transition-colors">
               Zestaw
@@ -33,7 +36,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenOrdersSheet }) => {
         <div className="mt-8 pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-zinc-600 text-[11px]">
           <p>© {new Date().getFullYear()} Cold Customs. Wszelkie prawa zastrzeżone.</p>
           <div className="flex items-center gap-4">
-            <span>Darmowa dostawa na terenie Polski</span>
+            <span>Darmowa dostawa od 399 zł na terenie Polski</span>
             <span aria-hidden="true">·</span>
             <span>14 dni na zwrot</span>
           </div>

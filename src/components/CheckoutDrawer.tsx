@@ -1,15 +1,18 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Check, Truck, RotateCcw, ShieldCheck, MapPin } from 'lucide-react';
-import { useProductImages } from '../context/ImageContext';
+import { X, Check, Truck, RotateCcw, ShieldCheck, MapPin, Trash2, Plus, Minus, ShoppingBag, Sparkles } from 'lucide-react';
 import { PaczkomatMapPicker, InPostPoint } from './PaczkomatMapPicker';
 import { OrderSuccessData } from './OrderSuccessModal';
+import { CartItem } from '../types/cart';
+import { PRODUCTS, ProductItem, ProductVariant, FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING_FEE } from '../data/productData';
 
 interface CheckoutDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  quantity: number;
-  setQuantity: React.Dispatch<React.SetStateAction<number>>;
+  cartItems: CartItem[];
+  onUpdateQuantity: (id: string, delta: number) => void;
+  onRemoveItem: (id: string) => void;
+  onAddToCart?: (rect: DOMRect, product: ProductItem, variant?: ProductVariant) => void;
   initialStep?: 'checkout' | 'confirmation';
   onOrderSuccess?: (data: OrderSuccessData) => void;
 }
@@ -17,12 +20,13 @@ interface CheckoutDrawerProps {
 export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
   isOpen,
   onClose,
-  quantity,
-  setQuantity,
+  cartItems,
+  onUpdateQuantity,
+  onRemoveItem,
+  onAddToCart,
   initialStep = 'checkout',
   onOrderSuccess,
 }) => {
-  const { images } = useProductImages();
   const drawerScrollRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<'checkout' | 'confirmation'>(initialStep);
   const [deliveryMethod, setDeliveryMethod] = useState<'paczkomat' | 'courier'>('paczkomat');
@@ -60,9 +64,13 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
     setFormError(null);
   };
 
-  const pricePerUnit = 799;
-  const originalPricePerUnit = 849;
-  const totalPrice = pricePerUnit * quantity;
+  const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const totalQuantity = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const isFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD;
+  const shippingFee = subtotal === 0 ? 0 : isFreeShipping ? 0 : STANDARD_SHIPPING_FEE;
+  const totalPrice = subtotal + shippingFee;
+  const amountToFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
+  const progressPercent = Math.min(100, Math.round((subtotal / FREE_SHIPPING_THRESHOLD) * 100));
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -75,6 +83,11 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
       e.stopPropagation();
     }
     setFormError(null);
+
+    if (cartItems.length === 0) {
+      setFormError('Twój koszyk jest pusty. Dodaj produkt przed złożeniem zamówienia.');
+      return;
+    }
 
     // Validation
     if (!formData.fullName.trim()) {
@@ -99,6 +112,10 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
     const generatedOrderNum = `UBB-${Math.floor(10000 + Math.random() * 90000)}`;
     setOrderNumber(generatedOrderNum);
 
+    const itemsSummaryTitle = cartItems
+      .map((i) => `${i.title}${i.variantName ? ` [${i.variantName}]` : ''} (${i.quantity}x)`)
+      .join(', ');
+
     try {
       await fetch('/api/orders', {
         method: 'POST',
@@ -118,9 +135,11 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
             postalCode: formData.postalCode,
           },
           items: {
-            title: 'Ultra Bee Brakes - Tylny Układ Hamulcowy Plug & Play',
-            quantity: quantity,
-            pricePerUnit: pricePerUnit,
+            title: itemsSummaryTitle,
+            quantity: totalQuantity,
+            pricePerUnit: totalQuantity > 0 ? Math.round(totalPrice / totalQuantity) : totalPrice,
+            subtotal: subtotal,
+            shippingFee: shippingFee,
             totalPrice: totalPrice,
           },
           payment: {
@@ -137,7 +156,7 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
       const successData: OrderSuccessData = {
         orderNumber: generatedOrderNum,
         totalPrice: totalPrice,
-        quantity: quantity,
+        quantity: totalQuantity,
         paymentMethod: paymentMethod,
         deliveryMethod: deliveryMethod,
         addressOrLocker: formData.addressOrLocker,
@@ -147,7 +166,6 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
 
       if (onOrderSuccess) {
         onOrderSuccess(successData);
-        // Reset form data and close drawer
         setFormData({
           fullName: '',
           phone: '',
@@ -160,43 +178,24 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
         onClose();
       } else {
         setStep('confirmation');
-        setTimeout(() => {
-          if (drawerScrollRef.current) {
-            drawerScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-          }
-        }, 50);
       }
     }
-  };
-
-  const handleReset = () => {
-    setStep('checkout');
-    setFormData({
-      fullName: '',
-      phone: '',
-      email: '',
-      addressOrLocker: '',
-      city: '',
-      postalCode: '',
-    });
-    setSelectedLocker(null);
-    onClose();
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
+    <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
       {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="fixed inset-0 bg-black/75 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm cursor-pointer"
       />
 
-      {/* Drawer Container */}
+      {/* Drawer */}
       <motion.div
         ref={drawerScrollRef}
         initial={{ x: '100%' }}
@@ -210,16 +209,19 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
           <div>
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               {step === 'checkout' ? (
-                <span>Szybkie zamówienie</span>
+                <span>Koszyk & Zamówienie</span>
               ) : (
                 <span className="text-emerald-400">✓ Zamówienie przyjęte</span>
               )}
             </h3>
             <div className="flex items-center gap-2 text-xs text-zinc-400 mt-0.5">
-              <span className="text-white font-bold">{pricePerUnit} zł</span>
-              <span className="text-zinc-500 line-through">{originalPricePerUnit} zł</span>
+              <span className="text-white font-bold tabular-nums">{totalPrice} zł</span>
               <span>·</span>
-              <span className="text-emerald-400 font-medium">Darmowa wysyłka</span>
+              <span>{totalQuantity} {totalQuantity === 1 ? 'przedmiot' : 'przedmioty'}</span>
+              <span>·</span>
+              <span className={isFreeShipping ? 'text-emerald-400 font-medium' : 'text-zinc-400'}>
+                {isFreeShipping ? 'Darmowa wysyłka' : 'Wysyłka 15 zł (od 399 zł gratis)'}
+              </span>
             </div>
           </div>
 
@@ -235,59 +237,177 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
         <div className="p-6 flex-1">
           {step === 'checkout' ? (
             <div className="space-y-6">
-              {/* Product Card Summary */}
-              <div className="p-4 rounded-2xl bg-zinc-900/60 border border-white/10 flex gap-4 items-center">
-                <div className="w-16 h-16 rounded-xl bg-zinc-950 border border-white/10 overflow-hidden shrink-0">
-                  <img
-                    src={images.kit}
-                    alt="Ultra Bee Brakes"
-                    className="w-full h-full object-cover"
+              {/* Free shipping threshold progress bar */}
+              <div className="p-3.5 rounded-2xl bg-zinc-900/70 border border-white/10">
+                <div className="flex items-center justify-between text-xs mb-2">
+                  <span className="flex items-center gap-1.5 font-medium text-zinc-300">
+                    <Truck className={`w-4 h-4 ${isFreeShipping ? 'text-emerald-400' : 'text-amber-400'}`} />
+                    {isFreeShipping ? (
+                      <span className="text-emerald-400 font-bold">Darmowa wysyłka aktywna! (próg 399 zł)</span>
+                    ) : (
+                      <span>
+                        Brakuje <strong className="text-white font-bold tabular-nums">{amountToFreeShipping} zł</strong> do darmowej wysyłki!
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-[11px] font-bold text-zinc-400 tabular-nums">
+                    {subtotal} / {FREE_SHIPPING_THRESHOLD} zł
+                  </span>
+                </div>
+
+                {/* Progress track */}
+                <div className="w-full h-1.5 bg-zinc-950 rounded-full overflow-hidden border border-white/5">
+                  <div
+                    className={`h-full transition-all duration-500 ${
+                      isFreeShipping ? 'bg-emerald-400' : 'bg-gradient-to-r from-amber-400 to-emerald-400'
+                    }`}
+                    style={{ width: `${progressPercent}%` }}
                   />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-bold text-white truncate">
-                    Ultra Bee Brakes
-                  </h4>
-                  <p className="text-xs text-zinc-400">
-                    Cold Customs · Plug & Play (Surron / 79 Bike / E-Ride Pro / Ventus / Talaria)
-                  </p>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-sm font-bold text-white tabular-nums">
-                      {pricePerUnit} zł
-                    </span>
+              </div>
 
-                    {/* Quantity controls */}
-                    <div className="flex items-center border border-white/15 rounded-lg bg-zinc-950 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                        className="px-2 py-0.5 text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                      >
-                        -
-                      </button>
-                      <span className="px-2 font-semibold text-white tabular-nums">
-                        {quantity}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setQuantity((q) => q + 1)}
-                        className="px-2 py-0.5 text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                      >
-                        +
-                      </button>
+              {/* Product Cards List */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs text-zinc-400">
+                  <span className="font-semibold uppercase tracking-wider text-[11px]">Twoje produkty</span>
+                  <span className="tabular-nums">{cartItems.length} pozycji</span>
+                </div>
+
+                {cartItems.length === 0 ? (
+                  <div className="p-8 rounded-2xl bg-zinc-900/40 border border-white/10 text-center">
+                    <ShoppingBag className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
+                    <p className="text-sm text-zinc-300 font-medium mb-1">Twój koszyk jest pusty</p>
+                    <p className="text-xs text-zinc-500 mb-4">Wybierz produkty z oferty Cold Customs</p>
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="px-4 py-2 text-xs font-semibold text-black bg-white rounded-xl hover:bg-zinc-200 transition-colors"
+                    >
+                      Przeglądaj ofertę
+                    </button>
+                  </div>
+                ) : (
+                  cartItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="p-3.5 sm:p-4 rounded-2xl bg-zinc-900/60 border border-white/10 flex gap-3.5 items-center"
+                    >
+                      <div className="w-16 h-16 rounded-xl bg-zinc-950 border border-white/10 overflow-hidden shrink-0">
+                        <img
+                          src={item.image}
+                          alt={item.title}
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <h4 className="text-sm font-bold text-white truncate">
+                              {item.title}
+                            </h4>
+                            {item.variantName && (
+                              <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 inline-block mt-1">
+                                {item.variantName}
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => onRemoveItem(item.id)}
+                            className="text-zinc-500 hover:text-rose-400 transition-colors p-1"
+                            title="Usuń z koszyka"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-sm font-bold text-white tabular-nums">
+                            {item.price * item.quantity} zł
+                            {item.quantity > 1 && (
+                              <span className="text-[11px] font-normal text-zinc-500 ml-1">
+                                ({item.price} zł/szt.)
+                              </span>
+                            )}
+                          </span>
+
+                          {/* Quantity Stepper */}
+                          <div className="flex items-center border border-white/15 rounded-lg bg-zinc-950 text-xs">
+                            <button
+                              type="button"
+                              onClick={() => onUpdateQuantity(item.id, -1)}
+                              className="px-2 py-1 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="px-2 font-semibold text-white tabular-nums">
+                              {item.quantity}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => onUpdateQuantity(item.id, 1)}
+                              className="px-2 py-1 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
+                  ))
+                )}
+              </div>
+
+              {/* Quick Add Companion Product */}
+              {onAddToCart && (
+                <div className="pt-2">
+                  <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-2">
+                    Dobierz do zamówienia
+                  </span>
+                  <div className="grid grid-cols-1 gap-2">
+                    {PRODUCTS.filter((p) => !cartItems.some((ci) => ci.productId === p.id)).map((p) => (
+                      <div
+                        key={p.id}
+                        className="p-3 rounded-xl bg-zinc-900/50 border border-white/10 flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-12 h-12 rounded-lg bg-zinc-950 shrink-0 overflow-hidden border border-white/10">
+                            <img
+                              src={p.image}
+                              alt={p.name}
+                              referrerPolicy="no-referrer"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold text-white block truncate">
+                              {p.name}
+                            </span>
+                            <span className="text-xs text-zinc-400 tabular-nums">
+                              {p.price} zł
+                              {p.variants ? ' · opcja z okleiną gratis' : ''}
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                            const defaultVariant = p.variants ? p.variants[0] : undefined;
+                            onAddToCart(rect, p, defaultVariant);
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-white text-black text-xs font-bold hover:bg-zinc-200 transition-colors shrink-0 flex items-center gap-1 cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Dodaj</span>
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
-
-              {/* Free shipping highlight */}
-              <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3 text-xs text-emerald-300">
-                <Truck className="w-4 h-4 shrink-0 text-emerald-400" />
-                <div className="flex-1 flex items-center justify-between">
-                  <span className="font-medium">Darmowa wysyłka kurierem / Paczkomat</span>
-                  <span className="font-bold text-emerald-400">0 zł</span>
-                </div>
-              </div>
+              )}
 
               {/* Delivery method */}
               <div>
@@ -305,7 +425,9 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
                     }`}
                   >
                     <span className="text-xs font-semibold block">Paczkomat InPost</span>
-                    <span className="text-[11px] text-emerald-400">Darmowa dostawa · Mapa</span>
+                    <span className={`text-[11px] ${isFreeShipping ? 'text-emerald-400' : 'text-zinc-400'}`}>
+                      {isFreeShipping ? 'Darmowa dostawa (0 zł)' : '15 zł (od 399 zł gratis)'}
+                    </span>
                   </button>
                   <button
                     type="button"
@@ -317,7 +439,9 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
                     }`}
                   >
                     <span className="text-xs font-semibold block">Kurier pod drzwi</span>
-                    <span className="text-[11px] text-emerald-400">Darmowa dostawa</span>
+                    <span className={`text-[11px] ${isFreeShipping ? 'text-emerald-400' : 'text-zinc-400'}`}>
+                      {isFreeShipping ? 'Darmowa dostawa (0 zł)' : '15 zł (od 399 zł gratis)'}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -455,155 +579,87 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold block">Przelew na konto</span>
+                      <span className="text-xs font-bold block">Tradycyjny przelew</span>
+                      <span className="text-[10px] font-bold text-zinc-400 bg-white/5 px-1.5 py-0.5 rounded">Konto</span>
                     </div>
-                    <span className="text-[11px] text-zinc-400 block mt-1">Tradycyjny przelew bankowy</span>
+                    <span className="text-[11px] text-zinc-400 block mt-1">Dane do wpłaty po złożeniu</span>
                   </button>
                 </div>
               </div>
 
-              {/* Total Summary & Submit */}
-              <div className="pt-4 border-t border-white/10">
-                <div className="flex justify-between items-baseline mb-4">
-                  <div>
-                    <span className="text-xs text-zinc-400 block">Razem do zapłaty:</span>
-                    <span className="text-xs text-emerald-400 font-medium">Darmowa wysyłka w cenie</span>
+              {/* Validation Error Message */}
+              {formError && (
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
+                  {formError}
+                </div>
+              )}
+
+              {/* Order total & Submit Button */}
+              <div className="pt-4 border-t border-white/10 space-y-2.5">
+                <div className="space-y-1 text-xs text-zinc-400">
+                  <div className="flex items-center justify-between">
+                    <span>Produkty</span>
+                    <span className="text-white font-semibold tabular-nums">{subtotal} zł</span>
                   </div>
-                  <span className="text-2xl font-bold text-white tabular-nums">
+                  <div className="flex items-center justify-between">
+                    <span>Dostawa ({deliveryMethod === 'paczkomat' ? 'Paczkomat InPost' : 'Kurier'})</span>
+                    <span className={`font-semibold tabular-nums ${isFreeShipping ? 'text-emerald-400' : 'text-white'}`}>
+                      {isFreeShipping ? '0 zł (Darmowa)' : `${shippingFee} zł`}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-sm pt-2 border-t border-white/10">
+                  <span className="text-white font-semibold">Do zapłaty łącznie</span>
+                  <span className="text-2xl font-extrabold text-white tabular-nums">
                     {totalPrice} zł
                   </span>
                 </div>
 
-                {/* Form Error Banner */}
-                {formError && (
-                  <div className="mb-3 p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-medium flex items-center gap-2">
-                    <span>⚠️</span>
-                    <span>{formError}</span>
-                  </div>
-                )}
-
-                <motion.button
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.98 }}
+                <button
                   type="button"
+                  disabled={isSubmitting || cartItems.length === 0}
                   onClick={handleSubmitOrder}
-                  disabled={isSubmitting}
-                  className="w-full py-3.5 px-4 text-sm font-semibold text-black bg-white hover:bg-zinc-200 rounded-xl transition-all shadow-lg cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg cursor-pointer flex items-center justify-center gap-2 mt-2"
                 >
                   {isSubmitting ? (
-                    <span>Zapisywanie zamówienia...</span>
+                    <span>Przetwarzanie...</span>
                   ) : (
-                    <span>Zamawiam i płacę · {totalPrice} zł</span>
+                    <span>Potwierdź zamówienie ({totalPrice} zł)</span>
                   )}
-                </motion.button>
+                </button>
 
-                {/* 14-day return reassurance */}
-                <div className="mt-3 flex items-center justify-center gap-2 text-xs text-zinc-400">
-                  <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Objęte 14-dniowym prawem do zwrotu</span>
-                  <span className="text-zinc-600">·</span>
-                  <span>Pełne wsparcie sklepu</span>
+                <div className="flex items-center justify-center gap-4 text-[11px] text-zinc-500 pt-1">
+                  <span className="flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-zinc-400" />
+                    Bezpieczne zamówienie
+                  </span>
+                  <span>·</span>
+                  <span className="flex items-center gap-1">
+                    <RotateCcw className="w-3.5 h-3.5 text-zinc-400" />
+                    14 dni na zwrot
+                  </span>
                 </div>
               </div>
             </div>
           ) : (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-center py-8 space-y-6"
-            >
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto">
+            /* Confirmation Step */
+            <div className="py-8 text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
                 <Check className="w-8 h-8" />
               </div>
-
-              <div>
-                <span className="text-xs font-semibold text-zinc-400 uppercase tracking-widest block mb-1">
-                  Zamówienie przyjęte
-                </span>
-                <h4 className="text-2xl font-bold text-white mb-2">
-                  Dziękujemy za zamówienie!
-                </h4>
-                <p className="text-xs text-zinc-300 max-w-sm mx-auto">
-                  Numer Twojego zamówienia:{' '}
-                  <strong className="text-white font-mono text-sm">{orderNumber}</strong>.
-                  Zapisaliśmy je w systemie i przystępujemy do kompletacji.
-                </p>
-              </div>
-
-              {/* Payment instructions callout */}
-              <div className="p-4 rounded-2xl bg-zinc-900 border border-white/10 text-left text-xs max-w-sm mx-auto space-y-2">
-                {paymentMethod === 'cod' && (
-                  <div>
-                    <span className="text-emerald-400 font-bold block mb-1">💵 Płatność za pobraniem (0 zł dopłaty)</span>
-                    <p className="text-zinc-300 text-[11px] leading-relaxed">
-                      Kwotę <strong>{totalPrice} zł</strong> zapłacisz wygodnie przy odbiorze w Paczkomacie InPost (kartą lub BLIK-iem w aplikacji) lub u kuriera.
-                    </p>
-                  </div>
-                )}
-
-                {paymentMethod === 'blik_phone' && (
-                  <div>
-                    <span className="text-amber-400 font-bold block mb-1">📱 Płatność BLIK na telefon</span>
-                    <p className="text-zinc-300 text-[11px] leading-relaxed">
-                      Zrób szybki przelew BLIK na telefon na numer:{' '}
-                      <strong className="text-white font-mono text-xs block mt-1">+48 534 396 429</strong>
-                      <span className="text-zinc-400 block mt-1">
-                        W tytule przelewu podaj numer: <strong className="text-white">{orderNumber}</strong>.
-                      </span>
-                    </p>
-                  </div>
-                )}
-
-                {paymentMethod === 'transfer' && (
-                  <div>
-                    <span className="text-blue-400 font-bold block mb-1">🏦 Przelew bankowy</span>
-                    <div className="text-zinc-300 text-[11px] leading-relaxed space-y-1">
-                      <span className="text-zinc-400 block text-[10px]">Numer konta:</span>
-                      <strong className="text-white font-mono text-xs block bg-black/40 px-2 py-1 rounded-lg border border-white/10">
-                        77 1050 1894 1000 0097 9386 1098
-                      </strong>
-                      <span>Odbiorca: <strong>Cold Customs</strong></span><br />
-                      <span>Tytuł: <strong>Zamówienie {orderNumber}</strong></span><br />
-                      <span>Kwota: <strong className="text-white font-bold">{totalPrice} zł</strong></span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-4 rounded-2xl bg-zinc-900/60 border border-white/10 text-left text-xs space-y-2 max-w-sm mx-auto">
-                <div className="flex justify-between text-zinc-400">
-                  <span>Produkt:</span>
-                  <span className="text-white font-medium">Ultra Bee Brakes ({quantity} szt.)</span>
-                </div>
-                <div className="flex justify-between text-zinc-400">
-                  <span>Kwota:</span>
-                  <span className="text-white font-bold tabular-nums">{totalPrice} zł</span>
-                </div>
-                <div className="flex justify-between text-zinc-400">
-                  <span>Dostawa:</span>
-                  <span className="text-emerald-400 font-medium">0 zł (Darmowa wysyłka)</span>
-                </div>
-                <div className="flex justify-between text-zinc-400">
-                  <span>Punkt odbioru:</span>
-                  <span className="text-white font-medium truncate max-w-[200px] text-right">
-                    {deliveryMethod === 'paczkomat'
-                      ? selectedLocker ? `Paczkomat ${selectedLocker.name}` : formData.addressOrLocker || 'Paczkomat InPost'
-                      : 'Kurier (adres domowy)'}
-                  </span>
-                </div>
-                <div className="flex justify-between text-zinc-400">
-                  <span>Status:</span>
-                  <span className="text-emerald-400 font-medium">Przyjęte do realizacji</span>
-                </div>
-              </div>
-
+              <h4 className="text-xl font-bold text-white">Dziękujemy za zamówienie!</h4>
+              <p className="text-xs text-zinc-400 max-w-sm mx-auto leading-relaxed">
+                Numer zamówienia: <strong className="text-white font-mono">{orderNumber}</strong>. Potwierdzenie zostało wysłane. Nadamy paczkę w ciągu 24h.
+              </p>
               <button
-                onClick={handleReset}
-                className="w-full max-w-sm mx-auto py-3 px-4 text-xs font-semibold text-black bg-white hover:bg-zinc-200 rounded-xl transition-all cursor-pointer shadow-md block"
+                type="button"
+                onClick={onClose}
+                className="mt-4 px-6 py-2.5 rounded-xl bg-white text-black text-xs font-bold hover:bg-zinc-200 transition-colors"
               >
-                Wróć do sklepu
+                Zamknij okno
               </button>
-            </motion.div>
+            </div>
           )}
         </div>
       </motion.div>

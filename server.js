@@ -381,16 +381,13 @@ app.get('*', (req, res) => {
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────
-const PORT = Number(process.env.PORT) || 8080;
-
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🚀 Cold Customs sklep uruchomiony na porcie ${PORT} (0.0.0.0)`);
   console.log(`🌐 Otwórz: http://localhost:${PORT}`);
   console.log(`🔐 Panel admina: Ctrl+Shift+O (hasło: ${getExpectedSecret()})\n`);
 });
 
-// Jeśli PORT jest inny niż 8080, nasłuchuj także na 8080, aby dopasować się do reguł Railway
-if (PORT !== 8080) {
+if (PORT !== 8080 && process.env.RAILWAY_ENVIRONMENT) {
   try {
     app.listen(8080, '0.0.0.0', () => {
       console.log(`🚀 Backup listener na porcie 8080 (0.0.0.0) aktywny`);

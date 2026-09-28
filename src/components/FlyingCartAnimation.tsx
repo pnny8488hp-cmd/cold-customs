@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import kitImg from '../assets/images/exact_kit_1790439028601.jpg';
+import kitImg from '../assets/images/kit.png';
 
 export interface FlyingItem {
   id: string;
@@ -48,8 +48,8 @@ export const FlyingCartAnimation: React.FC<FlyingCartAnimationProps> = ({
           >
             <img
               src={item.image || kitImg}
-              alt="Ultra Bee Brakes"
-              className="w-full h-full object-contain"
+              alt="Produkt"
+              className="w-full h-full object-cover"
             />
           </motion.div>
         ))}

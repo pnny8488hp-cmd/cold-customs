@@ -21,16 +21,16 @@ const FAQ_ITEMS: FaqItem[] = [
     a: 'Układ jest przystosowany do pracy ze standardowym motocyklowym płynem hamulcowym DOT 4 oraz DOT 5.1, charakteryzującym się wysoką temperaturą wrzenia.',
   },
   {
-    q: 'Jak wygląda darmowa wysyłka i czas dostawy?',
-    a: 'Wysyłka jest w 100% bezpłatna na terenie całej Polski. Zamówienia nadajemy w ciągu 24 godzin kurierem lub do wskazanego Paczkomatu InPost.',
+    q: 'Jak działa darmowa wysyłka i ile kosztuje dostawa?',
+    a: 'Darmowa wysyłka przysługuje dla wszystkich zamówień od kwoty 399 zł (np. układ Ultra Bee Brakes ma wysyłkę 0 zł). Dla zamówień poniżej 399 zł (np. pojedynczy Front Plate za 119 zł) koszt wysyłki wynosi 15 zł. Zamówienia nadajemy błyskawicznie w 24h do Paczkomatu InPost lub kurierem.',
   },
   {
-    q: 'Do jakich dokładnie modeli motocykli ten układ pasuje Plug & Play?',
-    a: 'Układ jest fabrycznie przygotowany pod montaż Plug & Play (bez żadnych przeróbek, spawania ani dorabiania tulejek) do: Surron LBX & LBS, 79 Bike Falcon Pro & Falcon GT/Lite, E-Ride Pro S & Pro SS / 3.0, motocykli Ventus oraz Talaria XXX / MX4. Wszystkie otwory montażowe, offset tarczy 240 mm i adapter pasują idealnie w fabryczne punkty.',
+    q: 'Czym różnią się opcje Front Plate i co dokładnie znajduje się w zestawie?',
+    a: 'Front Plate Cold Customs kosztuje 119 zł w obu wersjach. Do wyboru są 2 opcje: czysta bez naklejki oraz wersja z okleiną Cold Customs #1 w tej samej cenie (naklejka GRATIS!). W wersji z grafiką naklejka jest już fabrycznie naklejona na tablicę. W komplecie znajdują się dokładnie 2 przedmioty: przygotowana tablica z siatkami oraz 4 wzmocnione opaski montażowe (zip-ties).',
   },
   {
-    q: 'Co jeśli układ mi nie podpasuje? Jak wygląda zwrot?',
-    a: 'Jesteśmy w 100% pewni jakości wykonania i idealnego dopasowania do wymienionych modeli, dlatego dajemy Ci pełne 14 dni na bezproblemowy zwrot. Możesz na spokojnie przymierzyć zestaw do motocykla – jeśli cokolwiek nie spełni Twoich oczekiwań, odsyłasz go i otrzymujesz natychmiastowy zwrot wpłaty.',
+    q: 'Co jeśli zestaw mi nie podpasuje? Jak wygląda zwrot?',
+    a: 'Jesteśmy w 100% pewni jakości wykonania naszych komponentów, dlatego oferujemy 14 dni na bezproblemowy zwrot. Jeśli produkt nie spełni Twoich oczekiwań, odsyłasz go i otrzymujesz natychmiastowy zwrot wpłaty.',
   },
 ];
 

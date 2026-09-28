@@ -6,12 +6,14 @@ interface NavbarProps {
   onOpenCheckout: () => void;
   onOpenUploader: () => void;
   cartCount: number;
+  totalCartPrice: number;
   isCartBouncing: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   onOpenCheckout,
   cartCount,
+  totalCartPrice,
   isCartBouncing,
 }) => {
   return (
@@ -31,6 +33,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         <nav className="hidden lg:flex items-center gap-8 text-sm font-medium text-zinc-400">
           <a href="#overview" className="hover:text-white transition-colors">
             Przegląd
+          </a>
+          <a href="#catalog" className="hover:text-white transition-colors text-emerald-400 font-semibold">
+            Katalog Produktów
           </a>
           <a href="#package" className="hover:text-white transition-colors">
             Zestaw
@@ -58,8 +63,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="flex items-center gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 text-xs font-semibold text-black bg-white rounded-full hover:bg-zinc-200 transition-all shadow-sm whitespace-nowrap cursor-pointer relative"
           >
             <ShoppingBag className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Koszyk · 799 zł</span>
-            <span className="sm:hidden">799 zł</span>
+            <span className="hidden sm:inline">
+              {cartCount > 0 ? `Koszyk · ${totalCartPrice} zł` : 'Koszyk'}
+            </span>
+            <span className="sm:hidden">
+              {cartCount > 0 ? `${totalCartPrice} zł` : 'Koszyk'}
+            </span>
             {cartCount > 0 && (
               <motion.span
                 key={cartCount}
