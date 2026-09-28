@@ -17,7 +17,7 @@ function saveOriginalImagesPlugin() {
               const { slot, base64, ext = 'jpg' } = JSON.parse(body);
               const base64Data = base64.replace(/^data:image\/\w+;base64,/, '');
               const buffer = Buffer.from(base64Data, 'base64');
-              const publicDir = path.resolve(import.meta.dirname, 'public/images');
+              const publicDir = path.resolve(process.cwd(), 'public/images');
               if (!fs.existsSync(publicDir)) {
                 fs.mkdirSync(publicDir, { recursive: true });
               }
@@ -40,7 +40,7 @@ function saveOriginalImagesPlugin() {
           });
         } else if (req.method === 'GET') {
           try {
-            const publicDir = path.resolve(import.meta.dirname, 'public/images');
+            const publicDir = path.resolve(process.cwd(), 'public/images');
             const found: Record<string, string> = {};
             if (fs.existsSync(publicDir)) {
               const files = fs.readdirSync(publicDir);
@@ -63,7 +63,7 @@ function saveOriginalImagesPlugin() {
           }
         } else if (req.method === 'DELETE') {
           try {
-            const publicDir = path.resolve(import.meta.dirname, 'public/images');
+            const publicDir = path.resolve(process.cwd(), 'public/images');
             if (fs.existsSync(publicDir)) {
               const files = fs.readdirSync(publicDir);
               for (const file of files) {
@@ -160,7 +160,7 @@ function stripeCheckoutPlugin() {
 }
 
 function ordersManagementPlugin() {
-  const dataDir = path.resolve(import.meta.dirname, 'data');
+  const dataDir = path.resolve(process.cwd(), 'data');
   const ordersFile = path.join(dataDir, 'orders.json');
 
   function readOrders(): any[] {
@@ -613,7 +613,7 @@ export default defineConfig(() => {
     plugins: [react(), tailwindcss(), saveOriginalImagesPlugin(), stripeCheckoutPlugin(), ordersManagementPlugin()],
     resolve: {
       alias: {
-        '@': path.resolve(import.meta.dirname, '.'),
+        '@': path.resolve(process.cwd(), '.'),
       },
     },
     server: {
