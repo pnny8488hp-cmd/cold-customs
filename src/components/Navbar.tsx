@@ -30,11 +30,14 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Zone 2: Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-8 text-sm font-medium text-zinc-400">
+        <nav className="hidden lg:flex items-center gap-7 text-sm font-medium text-zinc-400">
           <a href="#overview" className="hover:text-white transition-colors">
             Przegląd
           </a>
-          <a href="#catalog" className="hover:text-white transition-colors text-emerald-400 font-semibold">
+          <a
+            href="#catalog"
+            className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 font-semibold transition-all shadow-sm"
+          >
             Katalog Produktów
           </a>
           <a href="#package" className="hover:text-white transition-colors">

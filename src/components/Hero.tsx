@@ -132,38 +132,47 @@ export const Hero: React.FC<HeroProps> = ({
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 pt-4">
-        {/* Editorial Product Switcher Navigation */}
-        <div className="flex justify-center mb-8">
-          <div className="inline-flex p-1 rounded-xl bg-zinc-900/90 border border-white/10 backdrop-blur-md shadow-lg max-w-full overflow-x-auto">
+        {/* Editorial Product Switcher Navigation - Highly prominent 2-product switcher */}
+        <div className="flex flex-col items-center justify-center mb-8">
+          <div className="inline-flex items-center gap-1.5 p-1.5 rounded-2xl bg-zinc-900/95 border-2 border-white/15 backdrop-blur-xl shadow-2xl max-w-full overflow-x-auto ring-1 ring-white/10">
             {products.map((p) => {
               const isSelected = p.id === activeProduct.id;
+              const isBrakes = p.id === 'ultra-bee-brakes';
               return (
                 <button
                   key={p.id}
                   type="button"
                   onClick={() => onSelectProduct(p)}
-                  className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
+                  className={`px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2.5 outline-none ${
                     isSelected
-                      ? 'bg-white text-black shadow-md'
-                      : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                      ? 'bg-white text-black shadow-lg shadow-white/10 ring-2 ring-emerald-500 scale-[1.02]'
+                      : 'text-zinc-300 hover:text-white hover:bg-zinc-800/80 bg-zinc-950/40'
                   }`}
                 >
-                  <span>{p.name}</span>
-                  {p.badge && (
-                    <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded ${
-                        isSelected
-                          ? 'bg-black/10 text-black font-bold'
-                          : 'bg-emerald-500/15 text-emerald-400 font-semibold'
-                      }`}
-                    >
-                      {p.badge}
-                    </span>
-                  )}
+                  <span className="flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-emerald-500' : 'bg-zinc-500'}`} />
+                    <span>{isBrakes ? '1. Ultra Bee Brakes' : '2. Front Plate Cold Customs'}</span>
+                  </span>
+                  <span
+                    className={`text-[10px] sm:text-[11px] px-2 py-0.5 rounded-md font-extrabold ${
+                      isSelected
+                        ? isBrakes
+                          ? 'bg-zinc-900 text-white'
+                          : 'bg-emerald-500 text-black'
+                        : isBrakes
+                        ? 'bg-white/10 text-zinc-300'
+                        : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                    }`}
+                  >
+                    {isBrakes ? '799 zł' : '119 zł'}
+                  </span>
                 </button>
               );
             })}
           </div>
+          <span className="text-[11px] text-zinc-500 mt-2 font-medium tracking-wide">
+            Kliknij powyżej lub sprawdź <a href="#catalog" className="text-emerald-400 hover:underline">katalog produktów</a> poniżej
+          </span>
         </div>
 
         {/* Editorial Header */}
@@ -326,19 +335,14 @@ export const Hero: React.FC<HeroProps> = ({
                   {activeProduct.tagline}
                 </p>
 
-                {/* Variant Options Selector for Front Plate (2 options at 119 zł, sticker gratis) */}
+                {/* Variant Options Selector for Front Plate */}
                 {activeProduct.variants && activeProduct.variants.length > 0 && (
                   <div className="mb-5 p-3 rounded-2xl bg-zinc-900/80 border border-white/10">
-                    <div className="flex items-center justify-between text-xs mb-2.5">
-                      <span className="text-zinc-300 font-semibold uppercase tracking-wider text-[11px]">
-                        Wybierz wersję (2 opcje):
-                      </span>
-                      <span className="text-emerald-400 font-bold text-[11px] bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                        Okleina GRATIS!
-                      </span>
-                    </div>
+                    <span className="text-zinc-400 font-semibold uppercase tracking-wider text-[11px] block mb-2">
+                      Wybierz wersję:
+                    </span>
 
-                    <div className="grid grid-cols-1 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {activeProduct.variants.map((v) => {
                         const isSelected = selectedVariant?.id === v.id;
                         return (
@@ -346,37 +350,22 @@ export const Hero: React.FC<HeroProps> = ({
                             key={v.id}
                             type="button"
                             onClick={() => setSelectedVariant(v)}
-                            className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                            className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
                               isSelected
                                 ? 'bg-zinc-800/90 border-emerald-500 ring-1 ring-emerald-500/50 text-white shadow-md'
                                 : 'bg-zinc-950/60 border-white/10 text-zinc-400 hover:text-white hover:border-white/20'
                             }`}
                           >
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg overflow-hidden border border-white/10 shrink-0">
-                                <img src={v.image} alt={v.name} className="w-full h-full object-cover" />
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs font-bold text-white block">
-                                    {v.name}
-                                  </span>
-                                </div>
-                                <span className="text-[11px] text-zinc-400 block mt-0.5">
-                                  {v.description}
-                                </span>
-                              </div>
+                            <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/10 shrink-0">
+                              <img src={v.image} alt={v.name} className="w-full h-full object-cover" />
                             </div>
-
-                            <div className="text-right shrink-0">
-                              <span className="text-sm font-extrabold text-white tabular-nums block">
-                                119 zł
+                            <div className="min-w-0">
+                              <span className="text-xs font-bold text-white block truncate">
+                                {v.shortName}
                               </span>
-                              {v.badge && (
-                                <span className="text-[10px] text-emerald-400 font-semibold block">
-                                  {v.badge}
-                                </span>
-                              )}
+                              <span className="text-[11px] text-zinc-400 block truncate">
+                                {v.price} zł
+                              </span>
                             </div>
                           </button>
                         );

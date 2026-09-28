@@ -38,21 +38,45 @@ function readStock() {
   try {
     if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
     if (!fs.existsSync(stockFile)) {
-      const initial = { stock: 10, updatedAt: new Date().toISOString() };
+      const initial = { brakes: 10, plates: 15, stock: 10, updatedAt: new Date().toISOString() };
       fs.writeFileSync(stockFile, JSON.stringify(initial, null, 2), 'utf-8');
       return initial;
     }
     const content = fs.readFileSync(stockFile, 'utf-8');
-    return JSON.parse(content || '{"stock": 10}');
+    const parsed = JSON.parse(content || '{}');
+    const brakes = parsed.brakes !== undefined ? parsed.brakes : (parsed.stock !== undefined ? parsed.stock : 10);
+    const plates = parsed.plates !== undefined ? parsed.plates : 15;
+    return {
+      brakes: Math.max(0, parseInt(brakes, 10) || 0),
+      plates: Math.max(0, parseInt(plates, 10) || 0),
+      stock: Math.max(0, parseInt(brakes, 10) || 0),
+      updatedAt: parsed.updatedAt || new Date().toISOString()
+    };
   } catch {
-    return { stock: 10, updatedAt: new Date().toISOString() };
+    return { brakes: 10, plates: 15, stock: 10, updatedAt: new Date().toISOString() };
   }
 }
 
-function writeStock(count) {
+function writeStock(stockUpdate) {
   if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  const current = readStock();
+  let brakes = current.brakes;
+  let plates = current.plates;
+
+  if (typeof stockUpdate === 'object' && stockUpdate !== null) {
+    if (stockUpdate.brakes !== undefined) brakes = Math.max(0, parseInt(stockUpdate.brakes, 10) || 0);
+    if (stockUpdate.plates !== undefined) plates = Math.max(0, parseInt(stockUpdate.plates, 10) || 0);
+    if (stockUpdate.stock !== undefined && stockUpdate.brakes === undefined) {
+      brakes = Math.max(0, parseInt(stockUpdate.stock, 10) || 0);
+    }
+  } else if (!isNaN(Number(stockUpdate))) {
+    brakes = Math.max(0, parseInt(stockUpdate, 10) || 0);
+  }
+
   const data = { 
-    stock: Math.max(0, parseInt(count, 10) || 0), 
+    brakes,
+    plates,
+    stock: brakes,
     updatedAt: new Date().toISOString() 
   };
   fs.writeFileSync(stockFile, JSON.stringify(data, null, 2), 'utf-8');
@@ -238,9 +262,24 @@ app.post('/api/orders', async (req, res) => {
 
     // Automatycznie zaktualizuj stan magazynowy po złożeniu zamówienia
     try {
-      const orderQty = Number(newOrder.items?.quantity) || 1;
       const currentStock = readStock();
-      writeStock(Math.max(0, currentStock.stock - orderQty));
+      let newBrakes = currentStock.brakes;
+      let newPlates = currentStock.plates;
+
+      if (Array.isArray(newOrder.items?.list) && newOrder.items.list.length > 0) {
+        for (const item of newOrder.items.list) {
+          const qty = Number(item.quantity) || 1;
+          if (item.productId === 'front-plate-cold-customs' || (item.id && item.id.includes('plate'))) {
+            newPlates = Math.max(0, newPlates - qty);
+          } else {
+            newBrakes = Math.max(0, newBrakes - qty);
+          }
+        }
+      } else {
+        const orderQty = Number(newOrder.items?.quantity) || 1;
+        newBrakes = Math.max(0, newBrakes - orderQty);
+      }
+      writeStock({ brakes: newBrakes, plates: newPlates });
     } catch {}
 
     sendOrderNotificationEmail(newOrder).catch(() => {});
@@ -252,13 +291,13 @@ app.post('/api/orders', async (req, res) => {
 });
 
 // ─── API: Stock (Stan magazynowy) ───────────────────────────────────────────
-// GET /api/stock – publiczny stan magazynowy
+// GET /api/stock – publiczny stan magazynowy (brakes & plates)
 app.get('/api/stock', (req, res) => {
   try {
     const data = readStock();
     res.json(data);
   } catch {
-    res.json({ stock: 10 });
+    res.json({ brakes: 10, plates: 15, stock: 10 });
   }
 });
 
@@ -270,12 +309,12 @@ app.post('/api/stock', (req, res) => {
     return res.status(401).json({ error: 'Dostęp chroniony hasłem' });
   }
 
-  const { stock } = req.body || {};
-  if (stock === undefined || isNaN(Number(stock))) {
-    return res.status(400).json({ error: 'Nieprawidłowa liczba sztuk' });
+  const { stock, brakes, plates } = req.body || {};
+  if (brakes === undefined && plates === undefined && stock === undefined) {
+    return res.status(400).json({ error: 'Podaj liczbę sztuk dla hamulców lub platów' });
   }
 
-  const updated = writeStock(Number(stock));
+  const updated = writeStock({ brakes, plates, stock });
   res.json({ success: true, ...updated });
 });
 

@@ -59,6 +59,20 @@
 }
 
 /* Dark mode Leaflet zoom controls */
+.leaflet-container {
+  z-index: 1 !important;
+  isolation: isolate !important;
+}
+
+.leaflet-pane {
+  z-index: 2 !important;
+}
+
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 5 !important;
+}
+
 .leaflet-bar {
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 10px !important;

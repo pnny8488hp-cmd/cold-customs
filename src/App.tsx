@@ -14,6 +14,7 @@ import { CountdownBanner } from './components/CountdownBanner';
 import { OrdersSheetModal } from './components/OrdersSheetModal';
 import { LiveSalesToast } from './components/LiveSalesToast';
 import { OrderSuccessModal, OrderSuccessData } from './components/OrderSuccessModal';
+import { LegalModal, LegalTab } from './components/LegalModals';
 import { PRODUCTS, ProductItem, ProductVariant } from './data/productData';
 import { CartItem } from './types/cart';
 
@@ -24,21 +25,22 @@ function StoreContent() {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [orderSuccessData, setOrderSuccessData] = useState<OrderSuccessData | null>(null);
 
+  const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
+  const [legalTab, setLegalTab] = useState<LegalTab>('terms');
+
+  const handleOpenLegal = (tab: LegalTab = 'terms') => {
+    setLegalTab(tab);
+    setIsLegalModalOpen(true);
+  };
+
   // Multi-product and Multi-item Cart state
   const [activeProduct, setActiveProduct] = useState<ProductItem>(PRODUCTS[0]);
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: PRODUCTS[0].id,
-      productId: PRODUCTS[0].id,
-      title: PRODUCTS[0].name,
-      price: PRODUCTS[0].price,
-      quantity: 1,
-      image: PRODUCTS[0].image,
-      category: PRODUCTS[0].category,
-    },
-  ]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
-  const [stock, setStock] = useState<number | null>(null);
+  const [stockState, setStockState] = useState<{ brakes: number; plates: number }>({
+    brakes: 10,
+    plates: 15,
+  });
   const [isCartBouncing, setIsCartBouncing] = useState(false);
   const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
   const [initialCheckoutStep, setInitialCheckoutStep] = useState<'checkout' | 'confirmation'>('checkout');
@@ -52,9 +54,10 @@ function StoreContent() {
       const res = await fetch('/api/stock');
       if (res.ok) {
         const data = await res.json();
-        if (data.stock !== undefined) {
-          setStock(data.stock);
-        }
+        setStockState({
+          brakes: data.brakes ?? data.stock ?? 10,
+          plates: data.plates ?? 15,
+        });
       }
     } catch {}
   };
@@ -112,7 +115,23 @@ function StoreContent() {
   };
 
   const handleSelectProduct = (product: ProductItem) => {
-    setActiveProduct(product);
+    const catalogEl = document.getElementById('catalog');
+    if (catalogEl) {
+      const prevRect = catalogEl.getBoundingClientRect();
+      const wasInView = prevRect.top < window.innerHeight && prevRect.bottom > 0;
+      setActiveProduct(product);
+      if (wasInView) {
+        requestAnimationFrame(() => {
+          const newRect = catalogEl.getBoundingClientRect();
+          const diff = newRect.top - prevRect.top;
+          if (Math.abs(diff) > 0.5) {
+            window.scrollBy({ top: diff, behavior: 'instant' as ScrollBehavior });
+          }
+        });
+      }
+    } else {
+      setActiveProduct(product);
+    }
   };
 
   const handleAddToCart = (rect: DOMRect, product: ProductItem, variant?: ProductVariant) => {
@@ -224,33 +243,35 @@ function StoreContent() {
           onOpenCheckout={handleOpenCheckout}
           onOpenUploader={handleOpenUploader}
           onAddToCart={handleAddToCart}
-          stock={stock}
+          stock={activeProduct.id === 'front-plate-cold-customs' ? stockState.plates : stockState.brakes}
         />
         <ProductCatalog
           activeProductId={activeProduct.id}
-          onSelectProduct={(p) => {
-            handleSelectProduct(p);
-            const el = document.getElementById('overview');
-            el?.scrollIntoView({ behavior: 'smooth' });
-          }}
+          onSelectProduct={handleSelectProduct}
           onAddToCart={handleAddToCart}
           onOpenCheckout={handleOpenCheckout}
+          stockState={stockState}
         />
         <KitContents
           activeProduct={activeProduct}
           onOpenCheckout={handleOpenCheckout}
           onAddToCart={handleAddToCart}
         />
-        <SpecsTable
-          activeProduct={activeProduct}
-          onOpenCheckout={handleOpenCheckout}
-          onAddToCart={(rect) => handleAddToCart(rect, activeProduct)}
-        />
+        {activeProduct.id !== 'front-plate-cold-customs' && (
+          <SpecsTable
+            activeProduct={activeProduct}
+            onOpenCheckout={handleOpenCheckout}
+            onAddToCart={(rect) => handleAddToCart(rect, activeProduct)}
+          />
+        )}
         <FaqSection />
       </main>
 
       {/* Footer */}
-      <Footer onOpenOrdersSheet={() => setIsOrdersSheetOpen(true)} />
+      <Footer
+        onOpenOrdersSheet={() => setIsOrdersSheetOpen(true)}
+        onOpenLegal={handleOpenLegal}
+      />
 
       {/* Orders & Package Tracking Spreadsheet Modal */}
       <OrdersSheetModal
@@ -281,6 +302,7 @@ function StoreContent() {
         onAddToCart={handleAddToCart}
         initialStep={initialCheckoutStep}
         onOrderSuccess={handleOrderSuccess}
+        onOpenLegal={handleOpenLegal}
       />
 
       {/* Prominent Centered Order Success Modal */}
@@ -288,6 +310,13 @@ function StoreContent() {
         isOpen={isSuccessModalOpen}
         onClose={() => setIsSuccessModalOpen(false)}
         orderData={orderSuccessData}
+      />
+
+      {/* Legal & Terms Modal */}
+      <LegalModal
+        isOpen={isLegalModalOpen}
+        onClose={() => setIsLegalModalOpen(false)}
+        initialTab={legalTab}
       />
 
       {/* Original Image Chroma Key Modal & Global Drag-Drop */}

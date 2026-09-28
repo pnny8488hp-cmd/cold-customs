@@ -25,12 +25,12 @@ const FAQ_ITEMS: FaqItem[] = [
     a: 'Darmowa wysyłka przysługuje dla wszystkich zamówień od kwoty 399 zł (np. układ Ultra Bee Brakes ma wysyłkę 0 zł). Dla zamówień poniżej 399 zł (np. pojedynczy Front Plate za 119 zł) koszt wysyłki wynosi 15 zł. Zamówienia nadajemy błyskawicznie w 24h do Paczkomatu InPost lub kurierem.',
   },
   {
-    q: 'Czym różnią się opcje Front Plate i co dokładnie znajduje się w zestawie?',
-    a: 'Front Plate Cold Customs kosztuje 119 zł w obu wersjach. Do wyboru są 2 opcje: czysta bez naklejki oraz wersja z okleiną Cold Customs #1 w tej samej cenie (naklejka GRATIS!). W wersji z grafiką naklejka jest już fabrycznie naklejona na tablicę. W komplecie znajdują się dokładnie 2 przedmioty: przygotowana tablica z siatkami oraz 4 wzmocnione opaski montażowe (zip-ties).',
+    q: 'Czym różnią się wersje Front Plate i co zawiera zestaw?',
+    a: 'Front Plate jest dostępny w wersji gładkiej czarnej lub z nałożoną okleiną wyścigową Cold Customs #1. W zestawie otrzymujesz tablicę ze zintegrowanymi siatkami wentylacyjnymi oraz 4 wzmocnione opaski zaciskowe (zip-ties) do montażu na lagach.',
   },
   {
     q: 'Co jeśli zestaw mi nie podpasuje? Jak wygląda zwrot?',
-    a: 'Jesteśmy w 100% pewni jakości wykonania naszych komponentów, dlatego oferujemy 14 dni na bezproblemowy zwrot. Jeśli produkt nie spełni Twoich oczekiwań, odsyłasz go i otrzymujesz natychmiastowy zwrot wpłaty.',
+    a: 'Oferujemy 14 dni na odstąpienie od umowy i bezproblemowy zwrot. Jeśli produkt jest kompletny i nie nosi śladów montażu ani uszkodzeń, odsyłasz go i otrzymujesz natychmiastowy zwrot wpłaty. Dokładną procedurę zwrotu znajdziesz w Regulaminie sklepu.',
   },
 ];
 

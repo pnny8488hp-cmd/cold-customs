@@ -15,6 +15,7 @@ interface CheckoutDrawerProps {
   onAddToCart?: (rect: DOMRect, product: ProductItem, variant?: ProductVariant) => void;
   initialStep?: 'checkout' | 'confirmation';
   onOrderSuccess?: (data: OrderSuccessData) => void;
+  onOpenLegal?: (tab: 'terms' | 'privacy') => void;
 }
 
 export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
@@ -26,6 +27,7 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
   onAddToCart,
   initialStep = 'checkout',
   onOrderSuccess,
+  onOpenLegal,
 }) => {
   const drawerScrollRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<'checkout' | 'confirmation'>(initialStep);
@@ -205,7 +207,7 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
         className="relative w-full max-w-lg bg-[#09090d] border-l border-white/10 h-full overflow-y-auto flex flex-col z-10 shadow-2xl"
       >
         {/* Header */}
-        <div className="p-6 border-b border-white/10 flex items-center justify-between sticky top-0 bg-[#09090d]/95 backdrop-blur-md z-20">
+        <div className="p-6 border-b border-white/10 flex items-center justify-between sticky top-0 bg-[#09090d] z-30 shadow-md">
           <div>
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               {step === 'checkout' ? (
@@ -629,16 +631,39 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
                   )}
                 </button>
 
-                <div className="flex items-center justify-center gap-4 text-[11px] text-zinc-500 pt-1">
-                  <span className="flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-zinc-400" />
-                    Bezpieczne zamówienie
-                  </span>
-                  <span>·</span>
-                  <span className="flex items-center gap-1">
-                    <RotateCcw className="w-3.5 h-3.5 text-zinc-400" />
-                    14 dni na zwrot
-                  </span>
+                <div className="pt-2 text-center text-[11px] text-zinc-500 space-y-1.5">
+                  <div className="flex items-center justify-center gap-3">
+                    <span className="flex items-center gap-1 text-zinc-400">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                      Bezpieczne zakupy
+                    </span>
+                    <span>·</span>
+                    <span className="flex items-center gap-1 text-zinc-400">
+                      <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
+                      14 dni na bezproblemowy zwrot
+                    </span>
+                  </div>
+                  {onOpenLegal && (
+                    <div className="text-[10px] text-zinc-500">
+                      Składając zamówienie akceptujesz{' '}
+                      <button
+                        type="button"
+                        onClick={() => onOpenLegal('terms')}
+                        className="text-zinc-400 hover:text-white underline cursor-pointer"
+                      >
+                        Regulamin
+                      </button>{' '}
+                      oraz{' '}
+                      <button
+                        type="button"
+                        onClick={() => onOpenLegal('privacy')}
+                        className="text-zinc-400 hover:text-white underline cursor-pointer"
+                      >
+                        Politykę prywatności
+                      </button>
+                      .
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

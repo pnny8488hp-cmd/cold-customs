@@ -409,17 +409,17 @@ export const PaczkomatMapPicker: React.FC<PaczkomatMapPickerProps> = ({
 
       {/* Map View */}
       {isMapExpanded && (
-        <div className="relative rounded-2xl overflow-hidden border border-white/10 h-52 bg-zinc-950 shadow-inner">
-          <div ref={mapContainerRef} className="w-full h-full" />
+        <div className="relative rounded-2xl overflow-hidden border border-white/10 h-52 bg-zinc-950 shadow-inner isolate z-0">
+          <div ref={mapContainerRef} className="w-full h-full relative z-0" />
           
           {loading && (
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center gap-2 text-xs text-white z-1000">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center gap-2 text-xs text-white z-10">
               <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />
               <span>Ładowanie Paczkomatów...</span>
             </div>
           )}
 
-          <div className="absolute bottom-2 left-2 z-1000 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-md text-[10px] text-zinc-300 border border-white/10 flex items-center gap-2 pointer-events-none">
+          <div className="absolute bottom-2 left-2 z-10 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-md text-[10px] text-zinc-300 border border-white/10 flex items-center gap-2 pointer-events-none">
             <span className="inline-block w-2 h-2 rounded-full bg-amber-400" />
             <span>Kliknij ikonę na mapie, aby wybrać</span>
           </div>

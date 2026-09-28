@@ -21,8 +21,9 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
   const [editingTracking, setEditingTracking] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
 
-  // Stock inventory management
-  const [stock, setStock] = useState<number | string>(10);
+  // Stock inventory management (separate for brakes and plates)
+  const [stockBrakes, setStockBrakes] = useState<number | string>(10);
+  const [stockPlates, setStockPlates] = useState<number | string>(15);
   const [savingStock, setSavingStock] = useState(false);
   const [stockSavedMessage, setStockSavedMessage] = useState(false);
 
@@ -43,9 +44,8 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
       const res = await fetch('/api/stock');
       if (res.ok) {
         const data = await res.json();
-        if (data.stock !== undefined) {
-          setStock(data.stock);
-        }
+        setStockBrakes(data.brakes ?? data.stock ?? 10);
+        setStockPlates(data.plates ?? 15);
       }
     } catch (e) {
       console.error('Błąd pobierania stanu magazynowego:', e);
@@ -187,9 +187,10 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
     const pin = getSavedPin();
     if (!pin) return;
 
-    const parsedStock = parseInt(String(stock), 10);
-    if (isNaN(parsedStock) || parsedStock < 0) {
-      alert('Podaj prawidłową liczbę sztuk (0 lub więcej).');
+    const parsedBrakes = parseInt(String(stockBrakes), 10);
+    const parsedPlates = parseInt(String(stockPlates), 10);
+    if (isNaN(parsedBrakes) || parsedBrakes < 0 || isNaN(parsedPlates) || parsedPlates < 0) {
+      alert('Podaj prawidłową liczbę sztuk (0 lub więcej) dla obu produktów.');
       return;
     }
 
@@ -202,12 +203,13 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
           'x-admin-pin': pin,
           'x-admin-password': pin,
         },
-        body: JSON.stringify({ stock: parsedStock }),
+        body: JSON.stringify({ brakes: parsedBrakes, plates: parsedPlates }),
       });
 
       if (res.ok) {
         const data = await res.json();
-        setStock(data.stock);
+        setStockBrakes(data.brakes ?? parsedBrakes);
+        setStockPlates(data.plates ?? parsedPlates);
         setStockSavedMessage(true);
         onStockChange?.();
         setTimeout(() => setStockSavedMessage(false), 2500);
@@ -362,24 +364,42 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
 
               {/* Quick stats and Limit badge */}
               <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
-                {/* Stock management input */}
-                <div className="px-3.5 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-xs flex items-center gap-2">
+                {/* Stock management input for Brakes & Plates */}
+                <div className="px-3.5 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-xs flex items-center gap-3">
                   <div>
                     <span className="text-zinc-400 block text-[10px] uppercase font-semibold">
-                      Dostępne sztuki:
+                      Hamulce:
                     </span>
-                    <div className="flex items-center gap-1.5 mt-0.5">
+                    <div className="flex items-center gap-1 mt-0.5">
                       <input
                         type="number"
                         min="0"
-                        value={stock}
-                        onChange={(e) => setStock(e.target.value)}
-                        className="w-14 px-2 py-0.5 bg-zinc-950 border border-white/15 rounded-lg text-xs font-bold text-white text-center tabular-nums focus:outline-none focus:border-emerald-500"
-                        title="Liczba dostępnych sztuk na magazynie"
+                        value={stockBrakes}
+                        onChange={(e) => setStockBrakes(e.target.value)}
+                        className="w-12 px-1.5 py-0.5 bg-zinc-950 border border-white/15 rounded-lg text-xs font-bold text-white text-center tabular-nums focus:outline-none focus:border-emerald-500"
+                        title="Dostępne sztuki układu hamulcowego Ultra Bee"
                       />
                       <span className="text-[11px] text-zinc-400">szt.</span>
                     </div>
                   </div>
+
+                  <div className="border-l border-white/10 pl-3">
+                    <span className="text-zinc-400 block text-[10px] uppercase font-semibold">
+                      Platy:
+                    </span>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <input
+                        type="number"
+                        min="0"
+                        value={stockPlates}
+                        onChange={(e) => setStockPlates(e.target.value)}
+                        className="w-12 px-1.5 py-0.5 bg-zinc-950 border border-white/15 rounded-lg text-xs font-bold text-white text-center tabular-nums focus:outline-none focus:border-emerald-500"
+                        title="Dostępne sztuki tablic Front Plate"
+                      />
+                      <span className="text-[11px] text-zinc-400">szt.</span>
+                    </div>
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => handleSaveStock()}
@@ -389,7 +409,7 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
                         ? 'bg-emerald-500 text-black font-extrabold'
                         : 'bg-zinc-800 hover:bg-zinc-700 text-white border border-white/10 hover:border-emerald-500/50'
                     } disabled:opacity-50`}
-                    title="Zapisz aktualny stan magazynowy"
+                    title="Zapisz stany magazynowe"
                   >
                     {savingStock ? '...' : stockSavedMessage ? '✓ Zapisano' : 'Zapisz'}
                   </button>
