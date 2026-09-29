@@ -48,8 +48,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           </a>
         </nav>
 
-        {/* Zone 3: Cart */}
-        <div className="flex items-center gap-2.5">
+        {/* Zone 3: Actions */}
+        <div className="flex items-center gap-2">
           <motion.button
             id="navbar-cart-btn"
             onClick={onOpenCheckout}

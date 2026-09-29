@@ -1,0 +1,67 @@
+{
+  "enabled": true,
+  "intervalSeconds": 25,
+  "mode": "smart",
+  "customSales": [
+    {
+      "id": "notif-1",
+      "city": "Warszawa",
+      "productName": "Vented Plate (Z okleiną #1)",
+      "productId": "front-plate-cold-customs",
+      "quantity": 1,
+      "deliveryMethod": "Paczkomat InPost",
+      "paczkomat": "WAW04M",
+      "timeAgo": "4 min temu"
+    },
+    {
+      "id": "notif-2",
+      "city": "Kraków",
+      "productName": "Ultra Bee Brakes",
+      "productId": "ultra-bee-brakes",
+      "quantity": 1,
+      "deliveryMethod": "Kurier InPost",
+      "paczkomat": "",
+      "timeAgo": "18 min temu"
+    },
+    {
+      "id": "notif-3",
+      "city": "Wrocław",
+      "productName": "Vented Plate (Bez naklejki)",
+      "productId": "front-plate-cold-customs",
+      "quantity": 1,
+      "deliveryMethod": "Paczkomat InPost",
+      "paczkomat": "WRO12A",
+      "timeAgo": "35 min temu"
+    },
+    {
+      "id": "notif-4",
+      "city": "Poznań",
+      "productName": "Ultra Bee Brakes",
+      "productId": "ultra-bee-brakes",
+      "quantity": 1,
+      "deliveryMethod": "Paczkomat InPost",
+      "paczkomat": "POZ08N",
+      "timeAgo": "52 min temu"
+    },
+    {
+      "id": "notif-5",
+      "city": "Gdańsk",
+      "productName": "Vented Plate (Z okleiną #1)",
+      "productId": "front-plate-cold-customs",
+      "quantity": 2,
+      "deliveryMethod": "Paczkomat InPost",
+      "paczkomat": "GDA01A",
+      "timeAgo": "1 godz. temu"
+    },
+    {
+      "id": "notif-6",
+      "city": "Katowice",
+      "productName": "Ultra Bee Brakes",
+      "productId": "ultra-bee-brakes",
+      "quantity": 1,
+      "deliveryMethod": "Kurier pobranie",
+      "paczkomat": "",
+      "timeAgo": "2 godz. temu"
+    }
+  ]
+}

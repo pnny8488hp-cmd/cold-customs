@@ -77,7 +77,7 @@ function StoreContent() {
     }
   }, []);
 
-  // Shortcut Ctrl + Shift + O or hash #orders to open Orders sheet
+  // Shortcut Ctrl + Shift + O or hash #orders / #admin / #panel to open Orders sheet
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'O' || e.key === 'o')) {
@@ -85,11 +85,21 @@ function StoreContent() {
         setIsOrdersSheetOpen((prev) => !prev);
       }
     };
-    if (window.location.hash === '#orders' || window.location.hash === '#arkusz') {
-      setIsOrdersSheetOpen(true);
-    }
+
+    const checkHash = () => {
+      const h = window.location.hash.toLowerCase();
+      if (h === '#orders' || h === '#arkusz' || h === '#admin' || h === '#panel') {
+        setIsOrdersSheetOpen(true);
+      }
+    };
+
+    checkHash();
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('hashchange', checkHash);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('hashchange', checkHash);
+    };
   }, []);
 
   const handleOpenCheckout = () => {

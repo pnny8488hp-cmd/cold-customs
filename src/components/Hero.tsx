@@ -151,7 +151,7 @@ export const Hero: React.FC<HeroProps> = ({
                 >
                   <span className="flex items-center gap-1.5">
                     <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-emerald-500' : 'bg-zinc-500'}`} />
-                    <span>{isBrakes ? '1. Ultra Bee Brakes' : '2. Front Plate Cold Customs'}</span>
+                    <span>{isBrakes ? '1. Ultra Bee Brakes' : '2. Vented Plate Cold Customs'}</span>
                   </span>
                   <span
                     className={`text-[10px] sm:text-[11px] px-2 py-0.5 rounded-md font-extrabold ${
@@ -241,7 +241,7 @@ export const Hero: React.FC<HeroProps> = ({
                     <motion.img
                       key={`${activeProduct.id}-${isUltraBee ? activeTabId : selectedVariant?.id}`}
                       src={displayedImage}
-                      alt={activeProduct.name}
+                      alt={`${activeProduct.name} – ${activeProduct.shortDescription} – Cold Customs`}
                       initial={{ opacity: 0.4 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0.4 }}

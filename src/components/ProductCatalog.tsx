@@ -113,7 +113,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
 
                   <img
                     src={displayedImage}
-                    alt={prod.name}
+                    alt={`${prod.name} – ${prod.category} – Wyczynowe części motocyklowe Cold Customs`}
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />

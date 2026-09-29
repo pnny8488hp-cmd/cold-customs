@@ -30,66 +30,10 @@ export const OriginalImageDropzone: React.FC<OriginalImageDropzoneProps> = ({
   const [isDraggingGlobal, setIsDraggingGlobal] = useState(false);
   const [activeSlotUploading, setActiveSlotUploading] = useState<string | null>(null);
 
-  // Global Drag & Drop listener
+  // Global Drag & Drop disabled for public customers
   useEffect(() => {
-    let dragCounter = 0;
-
-    const handleDragEnter = (e: DragEvent) => {
-      e.preventDefault();
-      dragCounter++;
-      if (e.dataTransfer?.types.includes('Files')) {
-        setIsDraggingGlobal(true);
-      }
-    };
-
-    const handleDragLeave = (e: DragEvent) => {
-      e.preventDefault();
-      dragCounter--;
-      if (dragCounter === 0) {
-        setIsDraggingGlobal(false);
-      }
-    };
-
-    const handleDragOver = (e: DragEvent) => {
-      e.preventDefault();
-    };
-
-    const handleDrop = async (e: DragEvent) => {
-      e.preventDefault();
-      dragCounter = 0;
-      setIsDraggingGlobal(false);
-
-      const files = e.dataTransfer?.files;
-      if (files && files.length > 0) {
-        setIsProcessing(true);
-        setMessage('Zapisywanie na serwerze...');
-        try {
-          const results = await processMultipleFiles(files, useChromaKey);
-          const successCount = results.filter((r) => r.success).length;
-          setMessage(`Pomyślnie zapisano ${successCount} zdjęć na serwerze!`);
-          setTimeout(() => {
-            setMessage(null);
-          }, 4000);
-        } catch {
-          setMessage('Wystąpił problem podczas zapisywania.');
-        } finally {
-          setIsProcessing(false);
-        }
-      }
-    };
-
-    window.addEventListener('dragenter', handleDragEnter);
-    window.addEventListener('dragleave', handleDragLeave);
-    window.addEventListener('dragover', handleDragOver);
-    window.addEventListener('drop', handleDrop);
-
-    return () => {
-      window.removeEventListener('dragenter', handleDragEnter);
-      window.removeEventListener('dragleave', handleDragLeave);
-      window.removeEventListener('dragover', handleDragOver);
-      window.removeEventListener('drop', handleDrop);
-    };
-  }, [processMultipleFiles, useChromaKey]);
+    // Disabled global window listeners
+  }, []);
 
   // Handle Multi-file upload batch
   const handleBatchUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

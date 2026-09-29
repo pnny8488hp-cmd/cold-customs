@@ -208,13 +208,13 @@ export const PRODUCTS: ProductItem[] = [
   },
   {
     id: 'front-plate-cold-customs',
-    name: 'Front Plate Cold Customs',
-    shortName: 'Front Plate',
+    name: 'Vented Plate Cold Customs',
+    shortName: 'Vented Plate',
     storeName: 'Cold Customs',
     category: 'Tablica przednia / Owiewka',
     badge: 'Nowość',
     isNew: true,
-    tagline: 'Sportowa tablica przednia ze zintegrowanymi siatkami wlotów powietrza',
+    tagline: 'Sportowa tablica przednia Vented Plate ze zintegrowanymi siatkami wlotów powietrza',
     price: 119,
     originalPrice: 159,
     discount: 40,
@@ -222,7 +222,7 @@ export const PRODUCTS: ProductItem[] = [
     shipping: 'Darmowa wysyłka od 399 zł (standard 15 zł)',
     returnPolicy: '14 dni na bezproblemowy zwrot',
     shortDescription:
-      'Lekka i odporna tablica przednia ze zintegrowanymi metalowymi siatkami wentylacyjnymi. Do wyboru wariant czysty lub z fabrycznie zaaplikowaną okleiną Cold Customs #1. W komplecie 4 opaski montażowe (zip-ties).',
+      'Lekka i odporna sportowa tablica przednia Vented Plate ze zintegrowanymi metalowymi siatkami wentylacyjnymi. Do wyboru wariant czysty lub z fabrycznie zaaplikowaną okleiną Cold Customs #1. W komplecie 4 opaski montażowe (zip-ties).',
     image: plateCleanImg,
     variants: [
       {
@@ -231,7 +231,7 @@ export const PRODUCTS: ProductItem[] = [
         shortName: 'Bez naklejki',
         price: 119,
         image: plateCleanImg,
-        description: 'Gładka, czarna tablica ze zintegrowanymi siatkami.',
+        description: 'Gładka, czarna tablica Vented Plate ze zintegrowanymi siatkami.',
       },
       {
         id: 'with-sticker',
@@ -259,7 +259,7 @@ export const PRODUCTS: ProductItem[] = [
     ],
     kitContents: [
       {
-        title: 'Przednia tablica Front Plate',
+        title: 'Przednia tablica Vented Plate',
         desc: 'Wybrany wariant: z profesjonalnie nałożoną okleiną Cold Customs #1 lub czysty czarny.',
         image: plateStickerImg,
       },
@@ -272,12 +272,12 @@ export const PRODUCTS: ProductItem[] = [
     components: [
       {
         id: 'plate-item',
-        name: 'Front Plate Cold Customs',
-        shortName: 'Tablica Front Plate',
+        name: 'Vented Plate Cold Customs',
+        shortName: 'Tablica Vented Plate',
         image: plateCleanImg,
         category: 'Przednia owiewka',
         description:
-          'Sportowa tablica przednia ze zintegrowanymi siatkami wlotów powietrza.',
+          'Sportowa tablica przednia Vented Plate ze zintegrowanymi siatkami wlotów powietrza.',
         specs: [
           { label: 'Wersje', value: 'Czysta lub z okleiną Cold Customs #1' },
           { label: 'Tworzywo', value: 'Odporny na pęknięcia polimer' },

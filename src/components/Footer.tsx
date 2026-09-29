@@ -53,7 +53,17 @@ export const Footer: React.FC<FooterProps> = ({ onOpenOrdersSheet, onOpenLegal }
         </div>
 
         <div className="mt-8 pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-zinc-600 text-[11px]">
-          <p>© {new Date().getFullYear()} Cold Customs. Wszelkie prawa zastrzeżone.</p>
+          <p>
+            © {new Date().getFullYear()}{' '}
+            <span
+              onClick={onOpenOrdersSheet}
+              className="cursor-default select-none"
+              title=""
+            >
+              Cold Customs
+            </span>
+            . Wszelkie prawa zastrzeżone.
+          </p>
           <div className="flex items-center gap-3 sm:gap-4 flex-wrap justify-center">
             <span>Darmowa dostawa od 399 zł</span>
             <span aria-hidden="true">·</span>

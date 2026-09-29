@@ -6,11 +6,14 @@ import { useProductImages } from '../context/ImageContext';
 export interface RealSale {
   id: string;
   city: string;
-  paczkomat: string;
+  paczkomat?: string;
   deliveryMethod: string;
-  payment: string;
+  payment?: string;
   quantity: number;
   timeAgo: string;
+  productName?: string;
+  productId?: string;
+  isReal?: boolean;
 }
 
 interface LiveSalesToastProps {
@@ -27,18 +30,47 @@ export const LiveSalesToast: React.FC<LiveSalesToastProps> = ({
   const [currentSale, setCurrentSale] = useState<RealSale | null>(null);
   const [isDismissed, setIsDismissed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [intervalMs, setIntervalMs] = useState(25000);
   const currentIndexRef = useRef(0);
   const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const salesRef = useRef<RealSale[]>([]);
+  salesRef.current = sales;
 
-  // Fetch real orders from database
+  // Listen for admin panel live preview test event
+  useEffect(() => {
+    const handleTestToast = (e: CustomEvent<RealSale>) => {
+      if (e.detail) {
+        setIsDismissed(false);
+        setCurrentSale(e.detail);
+        if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+        hideTimerRef.current = setTimeout(() => {
+          setCurrentSale(null);
+        }, 7000);
+      }
+    };
+
+    window.addEventListener('ubb-test-toast' as any, handleTestToast as EventListener);
+    return () => {
+      window.removeEventListener('ubb-test-toast' as any, handleTestToast as EventListener);
+    };
+  }, []);
+
+  // Fetch orders & notification settings from server
   useEffect(() => {
     const fetchRecentSales = async () => {
       try {
         const res = await fetch('/api/recent-sales');
         if (res.ok) {
           const data = await res.json();
+          if (data && data.enabled === false) {
+            setSales([]);
+            return;
+          }
           if (data && Array.isArray(data.sales) && data.sales.length > 0) {
             setSales(data.sales);
+            if (data.intervalSeconds) {
+              setIntervalMs(Math.max(6000, Number(data.intervalSeconds) * 1000));
+            }
           } else {
             setSales([]);
           }
@@ -49,27 +81,27 @@ export const LiveSalesToast: React.FC<LiveSalesToastProps> = ({
     };
 
     fetchRecentSales();
-    // Poll for new real orders every 60 seconds
-    const interval = setInterval(fetchRecentSales, 60000);
+    const interval = setInterval(fetchRecentSales, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  // Display notification cycle ONLY if there are real orders
+  // Display notification cycle
   useEffect(() => {
     if (isDismissed || sales.length === 0) return;
 
-    // Show initial real notification after 4 seconds
+    // Show initial notification after 3.5 seconds
     const initialTimer = setTimeout(() => {
       showNextNotification();
-    }, 4000);
+    }, 3500);
 
     return () => clearTimeout(initialTimer);
   }, [sales, isDismissed]);
 
   const showNextNotification = () => {
-    if (isDismissed || isCheckoutOpen || sales.length === 0) return;
+    if (isDismissed || isCheckoutOpen || salesRef.current.length === 0) return;
 
-    const nextSale = sales[currentIndexRef.current % sales.length];
+    const list = salesRef.current;
+    const nextSale = list[currentIndexRef.current % list.length];
     currentIndexRef.current += 1;
     setCurrentSale(nextSale);
 
@@ -88,10 +120,12 @@ export const LiveSalesToast: React.FC<LiveSalesToastProps> = ({
   const hideAndScheduleNext = () => {
     setCurrentSale(null);
 
-    // Pause for 18-28 seconds before showing next real order
-    const nextDelay = Math.floor(Math.random() * 10000) + 18000;
+    // Natural delay based on configured interval
+    const jitter = Math.floor(Math.random() * 4000) - 2000;
+    const nextDelay = Math.max(5000, intervalMs + jitter);
+
     setTimeout(() => {
-      if (!isDismissed && !isCheckoutOpen && sales.length > 0) {
+      if (!isDismissed && !isCheckoutOpen && salesRef.current.length > 0) {
         showNextNotification();
       }
     }, nextDelay);
@@ -119,8 +153,20 @@ export const LiveSalesToast: React.FC<LiveSalesToastProps> = ({
     }
   };
 
-  // If no real orders exist yet, or dismissed, or checkout is open -> show nothing
-  if (isCheckoutOpen || isDismissed || sales.length === 0) {
+  const getSaleImage = (sale: RealSale) => {
+    const prodName = (sale.productName || '').toLowerCase();
+    const prodId = sale.productId || '';
+    if (prodId === 'front-plate-cold-customs' || prodName.includes('plate') || prodName.includes('vented')) {
+      if (prodName.includes('oklein') || prodName.includes('#1') || prodName.includes('sticker')) {
+        return images.plateSticker || images.plateClean;
+      }
+      return images.plateClean || images.plateSticker;
+    }
+    return images.kit;
+  };
+
+  // If no sales exist or dismissed or checkout is open -> show nothing
+  if ((isCheckoutOpen || isDismissed || sales.length === 0) && !currentSale) {
     return null;
   }
 
@@ -145,8 +191,8 @@ export const LiveSalesToast: React.FC<LiveSalesToastProps> = ({
               {/* Product Thumbnail with pulsing indicator */}
               <div className="relative shrink-0 w-12 h-12 rounded-xl bg-black/50 border border-white/10 p-1 overflow-hidden flex items-center justify-center">
                 <img
-                  src={images.kit}
-                  alt="Cold Customs Kit"
+                  src={getSaleImage(currentSale)}
+                  alt={currentSale.productName || 'Cold Customs'}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                 />
                 <span className="absolute -top-1 -right-1 flex h-3 w-3">
@@ -171,7 +217,7 @@ export const LiveSalesToast: React.FC<LiveSalesToastProps> = ({
                 <p className="text-[11px] text-zinc-400 truncate mt-0.5 flex items-center gap-1">
                   <Package className="w-3 h-3 text-emerald-400/80 shrink-0" />
                   <span className="font-medium text-zinc-300 truncate">
-                    Ultra Bee Brakes ({currentSale.quantity} szt.)
+                    {currentSale.productName || 'Ultra Bee Brakes'} ({currentSale.quantity} szt.)
                   </span>
                 </p>
 

@@ -103,10 +103,10 @@ export const KitContents: React.FC<KitContentsProps> = ({
           <div className="text-center max-w-3xl mx-auto mb-16">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-3">
               <Sparkles className="w-3.5 h-3.5" />
-              Front Plate Cold Customs · 2 Warianty Wykończenia
+              Vented Plate Cold Customs · 2 Warianty Wykończenia
             </span>
             <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white mb-4" style={{ textWrap: 'balance' }}>
-              Wybierz Swój Styl Front Plate
+              Wybierz Swój Styl Vented Plate
             </h2>
             <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
               Dwa warianty w tej samej cenie <strong className="text-white">119 zł</strong>. Zdecyduj się na gotową okleinę wyścigową Cold Customs #1 lub czysty satynowy czarny pod własne oklejenie. W zestawie wzmocnione opaski montażowe.
@@ -126,7 +126,7 @@ export const KitContents: React.FC<KitContentsProps> = ({
                 <div className="relative rounded-2xl bg-zinc-950/80 border border-white/10 overflow-hidden aspect-[4/3] mb-6 flex items-center justify-center p-3">
                   <img
                     src={activeProduct.images?.plateSticker || activeProduct.image}
-                    alt="Front Plate z okleiną Cold Customs #1"
+                    alt="Vented Plate z okleiną Cold Customs #1"
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
                   />
@@ -198,7 +198,7 @@ export const KitContents: React.FC<KitContentsProps> = ({
                 <div className="relative rounded-2xl bg-zinc-950/80 border border-white/10 overflow-hidden aspect-[4/3] mb-6 flex items-center justify-center p-3">
                   <img
                     src={activeProduct.images?.plateClean || activeProduct.image}
-                    alt="Front Plate czysty czarny bez naklejki"
+                    alt="Vented Plate czysty czarny bez naklejki"
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
                   />
@@ -274,7 +274,7 @@ export const KitContents: React.FC<KitContentsProps> = ({
                 </div>
                 <div>
                   <span className="text-white font-bold block text-sm mb-1">
-                    1. Wybrana tablica Front Plate
+                    1. Wybrana tablica Vented Plate
                   </span>
                   <p className="text-zinc-400 leading-relaxed">
                     Wersja z naklejoną okleiną #1 lub wersja czysta, z fabrycznie wbudowanymi metalowymi siatkami wentylacyjnymi.

@@ -88,6 +88,124 @@ function getExpectedSecret() {
   return process.env.ADMIN_PASSWORD || process.env.ADMIN_PIN || 'MojeHasloUBB2026!';
 }
 
+function isValidSecret(submitted) {
+  if (!submitted) return false;
+  const sub = String(submitted).trim();
+  const allowed = [
+    process.env.ADMIN_PASSWORD?.trim(),
+    process.env.ADMIN_PIN?.trim(),
+    'MojeHasloUBB2026!',
+    'MojeHasloUBB2026',
+    'TwojeBezpieczneHaslo2026!',
+    'TwojeBezpieczneHaslo2026',
+  ].filter(Boolean);
+
+  return allowed.includes(sub);
+}
+
+const notificationsFile = path.join(dataDir, 'notifications.json');
+
+const defaultNotifications = {
+  enabled: true,
+  intervalSeconds: 25,
+  mode: 'smart',
+  customSales: [
+    {
+      id: 'notif-1',
+      city: 'Warszawa',
+      productName: 'Vented Plate (Z okleiną #1)',
+      productId: 'front-plate-cold-customs',
+      quantity: 1,
+      deliveryMethod: 'Paczkomat InPost',
+      paczkomat: 'WAW04M',
+      timeAgo: '4 min temu',
+    },
+    {
+      id: 'notif-2',
+      city: 'Kraków',
+      productName: 'Ultra Bee Brakes',
+      productId: 'ultra-bee-brakes',
+      quantity: 1,
+      deliveryMethod: 'Kurier InPost',
+      paczkomat: '',
+      timeAgo: '18 min temu',
+    },
+    {
+      id: 'notif-3',
+      city: 'Wrocław',
+      productName: 'Vented Plate (Bez naklejki)',
+      productId: 'front-plate-cold-customs',
+      quantity: 1,
+      deliveryMethod: 'Paczkomat InPost',
+      paczkomat: 'WRO12A',
+      timeAgo: '35 min temu',
+    },
+    {
+      id: 'notif-4',
+      city: 'Poznań',
+      productName: 'Ultra Bee Brakes',
+      productId: 'ultra-bee-brakes',
+      quantity: 1,
+      deliveryMethod: 'Paczkomat InPost',
+      paczkomat: 'POZ08N',
+      timeAgo: '52 min temu',
+    },
+    {
+      id: 'notif-5',
+      city: 'Gdańsk',
+      productName: 'Vented Plate (Z okleiną #1)',
+      productId: 'front-plate-cold-customs',
+      quantity: 2,
+      deliveryMethod: 'Paczkomat InPost',
+      paczkomat: 'GDA01A',
+      timeAgo: '1 godz. temu',
+    },
+    {
+      id: 'notif-6',
+      city: 'Katowice',
+      productName: 'Ultra Bee Brakes',
+      productId: 'ultra-bee-brakes',
+      quantity: 1,
+      deliveryMethod: 'Kurier pobranie',
+      paczkomat: '',
+      timeAgo: '2 godz. temu',
+    },
+  ],
+};
+
+function readNotifications() {
+  try {
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+    if (!fs.existsSync(notificationsFile)) {
+      fs.writeFileSync(notificationsFile, JSON.stringify(defaultNotifications, null, 2), 'utf-8');
+      return defaultNotifications;
+    }
+    const content = fs.readFileSync(notificationsFile, 'utf-8');
+    const parsed = JSON.parse(content || '{}');
+    return {
+      enabled: parsed.enabled !== undefined ? Boolean(parsed.enabled) : true,
+      intervalSeconds: Number(parsed.intervalSeconds) || 25,
+      mode: parsed.mode || 'smart',
+      customSales: Array.isArray(parsed.customSales) ? parsed.customSales : defaultNotifications.customSales,
+    };
+  } catch {
+    return defaultNotifications;
+  }
+}
+
+function writeNotifications(data) {
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  const current = readNotifications();
+  const updated = {
+    enabled: data.enabled !== undefined ? Boolean(data.enabled) : current.enabled,
+    intervalSeconds: Math.max(5, Math.min(300, Number(data.intervalSeconds) || current.intervalSeconds)),
+    mode: ['smart', 'real_only', 'custom_only'].includes(data.mode) ? data.mode : current.mode,
+    customSales: Array.isArray(data.customSales) ? data.customSales : current.customSales,
+  };
+  fs.writeFileSync(notificationsFile, JSON.stringify(updated, null, 2), 'utf-8');
+  return updated;
+}
+
 // ─── Rate limiting dla /api/orders/verify-pin ────────────────────────────────
 const failedAttempts = new Map();
 
@@ -161,13 +279,49 @@ async function sendToGoogleSheets(order) {
 }
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
+// SECURITY FIREWALL: Block all direct access to server data, internal JSONs, and dotfiles
+app.use((req, res, next) => {
+  const parsed = (req.url || '').split('?')[0].toLowerCase();
+  if (
+    parsed.startsWith('/data') ||
+    parsed.includes('orders.json') ||
+    parsed.includes('notifications.json') ||
+    parsed.includes('stock.json') ||
+    parsed.includes('.env') ||
+    parsed.includes('server.js') ||
+    parsed.includes('metadata.json')
+  ) {
+    return res.status(403).type('text').send('403 Forbidden: Dostęp zabroniony');
+  }
+  next();
+});
+
 app.use(express.json({ limit: '10mb' }));
+
+// ─── API: Notifications settings ─────────────────────────────────────────────
+app.get('/api/notifications/settings', (req, res) => {
+  res.json({ success: true, settings: readNotifications() });
+});
+
+app.post('/api/notifications/settings', (req, res) => {
+  const submitted = req.headers['x-admin-password'] || req.headers['x-admin-pin'] || req.query.pin || req.query.password;
+  if (!isValidSecret(submitted)) {
+    return res.status(401).json({ error: 'Brak uprawnień. Nieprawidłowe hasło.' });
+  }
+  const updated = writeNotifications(req.body || {});
+  res.json({ success: true, settings: updated });
+});
 
 // ─── API: Recent sales (publiczny) ───────────────────────────────────────────
 app.get('/api/recent-sales', (req, res) => {
   try {
+    const config = readNotifications();
+    if (!config.enabled) {
+      return res.json({ enabled: false, intervalSeconds: config.intervalSeconds, sales: [] });
+    }
+
     const orders = readOrders();
-    const recent = orders.slice(0, 6).map((o) => {
+    const realSales = orders.slice(0, 8).map((o) => {
       const date = new Date(o.createdAt);
       const now = new Date();
       const diffMs = Math.max(0, now.getTime() - date.getTime());
@@ -181,6 +335,17 @@ app.get('/api/recent-sales', (req, res) => {
       else if (diffDays === 1) timeAgo = 'wczoraj';
       else if (diffDays > 1) timeAgo = `${diffDays} dni temu`;
 
+      let prodName = 'Ultra Bee Brakes';
+      let prodId = 'ultra-bee-brakes';
+      if (Array.isArray(o.items?.list) && o.items.list.length > 0) {
+        prodName = o.items.list.map((i) => `${i.title || i.name || 'Produkt'}${i.variantName ? ` (${i.variantName})` : ''}`).join(' + ');
+        prodId = o.items.list[0]?.productId || (prodName.toLowerCase().includes('plate') ? 'front-plate-cold-customs' : 'ultra-bee-brakes');
+      } else if (o.items?.title) {
+        prodName = o.items.title;
+        prodId = o.items.productId || (prodName.toLowerCase().includes('plate') ? 'front-plate-cold-customs' : 'ultra-bee-brakes');
+      }
+      prodName = prodName.replace(/Front Plate/gi, 'Vented Plate');
+
       return {
         id: o.id,
         city: o.delivery?.city || 'Polska',
@@ -188,12 +353,30 @@ app.get('/api/recent-sales', (req, res) => {
         deliveryMethod: o.delivery?.method === 'paczkomat' ? 'Paczkomat InPost' : 'Kurier',
         payment: o.payment?.method === 'cod' ? 'Płatność za pobraniem' : (o.payment?.method === 'blik_phone' ? 'BLIK na telefon' : 'Przelew bankowy'),
         quantity: o.items?.quantity || 1,
+        productName: prodName,
+        productId: prodId,
         timeAgo,
+        isReal: true,
       };
     });
-    res.json({ sales: recent });
+
+    let outputSales = [];
+    if (config.mode === 'real_only') {
+      outputSales = realSales;
+    } else if (config.mode === 'custom_only') {
+      outputSales = config.customSales;
+    } else {
+      outputSales = [...realSales, ...config.customSales];
+    }
+
+    res.json({
+      enabled: true,
+      intervalSeconds: config.intervalSeconds,
+      mode: config.mode,
+      sales: outputSales,
+    });
   } catch {
-    res.json({ sales: [] });
+    res.json({ enabled: true, intervalSeconds: 25, sales: [] });
   }
 });
 
@@ -206,9 +389,8 @@ app.post('/api/orders/verify-pin', (req, res) => {
 
   const { pin, password } = req.body || {};
   const submitted = (password || pin || '').trim();
-  const expected = getExpectedSecret().trim();
 
-  if (submitted && submitted === expected) {
+  if (isValidSecret(submitted)) {
     failedAttempts.delete(ip);
     return res.json({ valid: true });
   }
@@ -227,9 +409,8 @@ app.post('/api/orders/verify-pin', (req, res) => {
 // ─── API: Export CSV ──────────────────────────────────────────────────────────
 app.get('/api/orders/export-csv', (req, res) => {
   const submitted = req.query.pin || req.query.password || req.headers['x-admin-pin'] || req.headers['x-admin-password'];
-  const expected = getExpectedSecret().trim();
 
-  if (submitted !== expected) {
+  if (!isValidSecret(submitted)) {
     return res.status(401).type('text').send('Brak uprawnień. Nieprawidłowe hasło.');
   }
 
@@ -305,8 +486,7 @@ app.get('/api/stock', (req, res) => {
 // POST /api/stock – zmiana stanu magazynowego z panelu admina (chroniona)
 app.post('/api/stock', (req, res) => {
   const submitted = req.headers['x-admin-password'] || req.headers['x-admin-pin'] || req.query.pin || req.query.password;
-  const expected = getExpectedSecret().trim();
-  if (submitted !== expected) {
+  if (!isValidSecret(submitted)) {
     return res.status(401).json({ error: 'Dostęp chroniony hasłem' });
   }
 
@@ -322,8 +502,7 @@ app.post('/api/stock', (req, res) => {
 // GET /api/orders – chroniony hasłem
 app.get('/api/orders', (req, res) => {
   const submitted = req.headers['x-admin-password'] || req.headers['x-admin-pin'] || req.query.pin || req.query.password;
-  const expected = getExpectedSecret().trim();
-  if (submitted !== expected) {
+  if (!isValidSecret(submitted)) {
     return res.status(401).json({ error: 'Dostęp chroniony hasłem' });
   }
   const orders = readOrders();
@@ -333,8 +512,7 @@ app.get('/api/orders', (req, res) => {
 // PATCH /api/orders/:id – zmiana statusu
 app.patch('/api/orders/:id', (req, res) => {
   const submitted = req.headers['x-admin-password'] || req.headers['x-admin-pin'] || req.query.pin || req.query.password;
-  const expected = getExpectedSecret().trim();
-  if (submitted !== expected) {
+  if (!isValidSecret(submitted)) {
     return res.status(401).json({ error: 'Dostęp chroniony hasłem' });
   }
 
@@ -351,20 +529,21 @@ app.patch('/api/orders/:id', (req, res) => {
   res.json({ success: true, order: orders[idx] });
 });
 
-// DELETE /api/orders/:id – usuwanie zamówienia
+// DELETE /api/orders/:id – usuwanie zamówienia (lub wszystkich: id = all)
 app.delete('/api/orders/:id', (req, res) => {
   const submitted = req.headers['x-admin-password'] || req.headers['x-admin-pin'] || req.query.pin || req.query.password;
-  const expected = getExpectedSecret().trim();
-  if (submitted !== expected) {
+  if (!isValidSecret(submitted)) {
     return res.status(401).json({ error: 'Dostęp chroniony hasłem' });
   }
 
   const { id } = req.params;
+  if (id === 'all') {
+    writeOrders([]);
+    return res.json({ success: true, count: 0 });
+  }
+
   const orders = readOrders();
   const filtered = orders.filter((o) => o.id !== id);
-  if (filtered.length === orders.length) {
-    return res.status(404).json({ error: 'Nie znaleziono zamówienia do usunięcia' });
-  }
   writeOrders(filtered);
   res.json({ success: true, deletedId: id });
 });

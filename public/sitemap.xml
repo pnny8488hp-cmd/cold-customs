@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://coldcustoms.pl/</loc>
+    <lastmod>2026-09-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://coldcustoms.pl/images/kit.jpg</image:loc>
+      <image:title>Ultra Bee Brakes - Tylny Układ Hamulcowy Plug and Play</image:title>
+      <image:caption>Kompletny tylny motocyklowy układ hamulcowy z tarczą 240 mm o grubości 3,2 mm i zaciskiem dwutłoczkowym do Sur-Ron Ultra Bee</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://coldcustoms.pl/images/plate_clean.jpg</image:loc>
+      <image:title>Vented Plate Cold Customs - Sportowa Tablica Przednia</image:title>
+      <image:caption>Wentylowana przednia tablica motocyklowa Vented Plate z metalowymi siatkami i zestawem opasek zaciskowych</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://coldcustoms.pl/images/disc.jpg</image:loc>
+      <image:title>Wentylowana tarcza hamulcowa 240 mm / 3,2 mm</image:title>
+      <image:caption>Pancerna tarcza motocyklowa odporna na przegrzanie i wygięcia w ciężkim terenie</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://coldcustoms.pl/images/caliper.jpg</image:loc>
+      <image:title>Masywny zacisk dwutłoczkowy z klockami</image:title>
+      <image:caption>Zacisk hamulcowy o powiększonej komorze olejowej zapewniający bezkompromisową siłę hamowania</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://coldcustoms.pl/#catalog</loc>
+    <lastmod>2026-09-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://coldcustoms.pl/#package</loc>
+    <lastmod>2026-09-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://coldcustoms.pl/#specs</loc>
+    <lastmod>2026-09-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://coldcustoms.pl/#faq</loc>
+    <lastmod>2026-09-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>

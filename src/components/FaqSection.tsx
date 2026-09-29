@@ -22,11 +22,11 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: 'Jak działa darmowa wysyłka i ile kosztuje dostawa?',
-    a: 'Darmowa wysyłka przysługuje dla wszystkich zamówień od kwoty 399 zł (np. układ Ultra Bee Brakes ma wysyłkę 0 zł). Dla zamówień poniżej 399 zł (np. pojedynczy Front Plate za 119 zł) koszt wysyłki wynosi 15 zł. Zamówienia nadajemy błyskawicznie w 24h do Paczkomatu InPost lub kurierem.',
+    a: 'Darmowa wysyłka przysługuje dla wszystkich zamówień od kwoty 399 zł (np. układ Ultra Bee Brakes ma wysyłkę 0 zł). Dla zamówień poniżej 399 zł (np. pojedynczy Vented Plate za 119 zł) koszt wysyłki wynosi 15 zł. Zamówienia nadajemy błyskawicznie w 24h do Paczkomatu InPost lub kurierem.',
   },
   {
-    q: 'Czym różnią się wersje Front Plate i co zawiera zestaw?',
-    a: 'Front Plate jest dostępny w wersji gładkiej czarnej lub z nałożoną okleiną wyścigową Cold Customs #1. W zestawie otrzymujesz tablicę ze zintegrowanymi siatkami wentylacyjnymi oraz 4 wzmocnione opaski zaciskowe (zip-ties) do montażu na lagach.',
+    q: 'Czym różnią się wersje Vented Plate i co zawiera zestaw?',
+    a: 'Vented Plate jest dostępny w wersji gładkiej czarnej lub z nałożoną okleiną wyścigową Cold Customs #1. W zestawie otrzymujesz tablicę ze zintegrowanymi siatkami wentylacyjnymi oraz 4 wzmocnione opaski zaciskowe (zip-ties) do montażu na lagach.',
   },
   {
     q: 'Co jeśli zestaw mi nie podpasuje? Jak wygląda zwrot?',

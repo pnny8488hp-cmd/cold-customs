@@ -119,7 +119,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                     1. Niniejszy Regulamin określa zasady korzystania ze sklepu internetowego Cold Customs, składania zamówień na produkty, uiszczania cen oraz realizacji prawa odstąpienia od umowy i procedury reklamacyjnej.
                   </p>
                   <p className="mt-1.5">
-                    2. Sprzedaż prowadzona jest za pośrednictwem serwisu internetowego. Oferowane produkty to wyczynowe komponenty motocyklowe (m.in. układy hamulcowe na tył Ultra Bee Brakes) oraz sportowe akcesoria motocyklowe (m.in. przednie tablice Front Plate Cold Customs).
+                    2. Sprzedaż prowadzona jest za pośrednictwem serwisu internetowego. Oferowane produkty to wyczynowe komponenty motocyklowe (m.in. układy hamulcowe na tył Ultra Bee Brakes) oraz sportowe akcesoria motocyklowe (m.in. przednie tablice Vented Plate Cold Customs).
                   </p>
                   <p className="mt-1.5">
                     3. Złożenie zamówienia jest równoznaczne ze zaznajomieniem się z treścią niniejszego Regulaminu i jego pełną akceptacją.
