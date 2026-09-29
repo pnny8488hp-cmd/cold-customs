@@ -1,8 +1,28 @@
-# robots.txt for Cold Customs
+# robots.txt for Cold Customs (https://coldcustoms.pl)
 User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /data/
 
-# Sitemap
+# Dedykowane reguły dla Googlebot i wyszukiwarek
+User-agent: Googlebot
+Allow: /
+Allow: /logo.jpg
+Allow: /images/
+Allow: /favicon*
+Disallow: /api/
+Disallow: /data/
+
+User-agent: Googlebot-Image
+Allow: /
+Allow: /images/
+Allow: /logo.jpg
+Allow: /logo.png
+
+User-agent: bingbot
+Allow: /
+Disallow: /api/
+Disallow: /data/
+
+# Mapa witryny XML
 Sitemap: https://coldcustoms.pl/sitemap.xml

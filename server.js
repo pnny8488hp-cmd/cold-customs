@@ -696,6 +696,26 @@ app.post('/api/upload-logo', (req, res) => {
 // ─── Serwuj public i dist ─────────────────────────────────────────────────────
 const distDir = path.join(__dirname, 'dist');
 const publicDir = path.join(__dirname, 'public');
+
+// Dedykowane endpointy dla botów wyszukiwarek (Googlebot, Bingbot, etc.)
+app.get('/robots.txt', (req, res) => {
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.setHeader('X-Robots-Tag', 'all');
+  const file = path.join(publicDir, 'robots.txt');
+  if (fs.existsSync(file)) return res.sendFile(file);
+  res.send('User-agent: *\nAllow: /\nSitemap: https://coldcustoms.pl/sitemap.xml\n');
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.setHeader('X-Robots-Tag', 'all');
+  const file = path.join(publicDir, 'sitemap.xml');
+  if (fs.existsSync(file)) return res.sendFile(file);
+  res.status(404).send('Sitemap not found');
+});
+
 app.use(express.static(publicDir));
 app.use(express.static(distDir));
 app.use('/images', express.static(path.join(__dirname, 'public/images')));

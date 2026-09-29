@@ -166,7 +166,7 @@ export const Hero: React.FC<HeroProps> = ({
                         : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                     }`}
                   >
-                    {isBrakes ? '799 zł' : '119 zł'}
+                    {p.price} zł
                   </span>
                 </button>
               );

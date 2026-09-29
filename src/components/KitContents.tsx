@@ -78,7 +78,7 @@ export const KitContents: React.FC<KitContentsProps> = ({
       id: 'with-sticker',
       name: 'Z okleiną Cold Customs #1',
       shortName: 'Z okleiną #1',
-      price: 119,
+      price: 149,
       badge: 'Okleina w cenie',
       image: activeProduct.images?.plateSticker || activeProduct.image,
       description: 'Z zaaplikowaną grubą okleiną wyścigową Cold Customs #1.',
@@ -88,7 +88,7 @@ export const KitContents: React.FC<KitContentsProps> = ({
       id: 'without-sticker',
       name: 'Bez naklejki (Czysty czarny)',
       shortName: 'Bez naklejki',
-      price: 119,
+      price: 149,
       image: activeProduct.images?.plateClean || activeProduct.image,
       description: 'Gładka, czarna tablica ze zintegrowanymi siatkami.',
     };
@@ -109,7 +109,7 @@ export const KitContents: React.FC<KitContentsProps> = ({
               Wybierz Swój Styl Vented Plate
             </h2>
             <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
-              Dwa warianty w tej samej cenie <strong className="text-white">119 zł</strong>. Zdecyduj się na gotową okleinę wyścigową Cold Customs #1 lub czysty satynowy czarny pod własne oklejenie. W zestawie wzmocnione opaski montażowe.
+              Dwa warianty w tej samej cenie <strong className="text-white">149 zł</strong>. Zdecyduj się na gotową okleinę wyścigową Cold Customs #1 lub czysty satynowy czarny pod własne oklejenie. W zestawie wzmocnione opaski montażowe.
             </p>
           </div>
 
@@ -118,7 +118,7 @@ export const KitContents: React.FC<KitContentsProps> = ({
             {/* Card 1: Z Okleiną Cold Customs #1 */}
             <div className="rounded-3xl bg-zinc-900/60 border-2 border-emerald-500/40 hover:border-emerald-500/80 transition-all p-6 sm:p-8 flex flex-col justify-between shadow-2xl shadow-emerald-950/20 relative group">
               <div className="absolute -top-3.5 left-6 px-3.5 py-1 rounded-full bg-emerald-500 text-black text-[11px] font-extrabold uppercase tracking-wider shadow-md">
-                Okleina w cenie (119 zł)
+                Okleina w cenie (149 zł)
               </div>
 
               <div>
@@ -144,10 +144,10 @@ export const KitContents: React.FC<KitContentsProps> = ({
                   </div>
                   <div className="text-right">
                     <span className="text-2xl font-extrabold text-white tabular-nums block">
-                      119 zł
+                      149 zł
                     </span>
                     <span className="text-xs text-zinc-500 line-through tabular-nums">
-                      159 zł
+                      200 zł
                     </span>
                   </div>
                 </div>
@@ -183,14 +183,14 @@ export const KitContents: React.FC<KitContentsProps> = ({
                 className="w-full py-3.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/20 active:scale-[0.98]"
               >
                 <ShoppingBag className="w-4 h-4" />
-                <span>Dodaj do koszyka (Z okleiną · 119 zł)</span>
+                <span>Dodaj do koszyka (Z okleiną · 149 zł)</span>
               </button>
             </div>
 
             {/* Card 2: Bez Naklejki (Czysty Czarny) */}
             <div className="rounded-3xl bg-zinc-900/60 border-2 border-white/10 hover:border-white/30 transition-all p-6 sm:p-8 flex flex-col justify-between shadow-2xl relative group">
               <div className="absolute -top-3.5 left-6 px-3.5 py-1 rounded-full bg-zinc-800 border border-white/15 text-zinc-200 text-[11px] font-bold uppercase tracking-wider shadow-md">
-                Czysty Plate (119 zł)
+                Czysty Plate (149 zł)
               </div>
 
               <div>
@@ -216,10 +216,10 @@ export const KitContents: React.FC<KitContentsProps> = ({
                   </div>
                   <div className="text-right">
                     <span className="text-2xl font-extrabold text-white tabular-nums block">
-                      119 zł
+                      149 zł
                     </span>
                     <span className="text-xs text-zinc-500 line-through tabular-nums">
-                      159 zł
+                      200 zł
                     </span>
                   </div>
                 </div>
@@ -255,7 +255,7 @@ export const KitContents: React.FC<KitContentsProps> = ({
                 className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-zinc-200 text-black font-extrabold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-[0.98]"
               >
                 <ShoppingBag className="w-4 h-4" />
-                <span>Dodaj do koszyka (Bez naklejki · 119 zł)</span>
+                <span>Dodaj do koszyka (Bez naklejki · 149 zł)</span>
               </button>
             </div>
           </div>

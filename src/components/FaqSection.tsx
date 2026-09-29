@@ -22,7 +22,7 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: 'Jak działa darmowa wysyłka i ile kosztuje dostawa?',
-    a: 'Darmowa wysyłka przysługuje dla wszystkich zamówień od kwoty 399 zł (np. układ Ultra Bee Brakes ma wysyłkę 0 zł). Dla zamówień poniżej 399 zł (np. pojedynczy Vented Plate za 119 zł) koszt wysyłki wynosi 15 zł. Zamówienia nadajemy błyskawicznie w 24h do Paczkomatu InPost lub kurierem.',
+    a: 'Darmowa wysyłka przysługuje dla wszystkich zamówień od kwoty 399 zł (np. układ Ultra Bee Brakes ma wysyłkę 0 zł). Dla zamówień poniżej 399 zł (np. pojedynczy Vented Plate za 149 zł) koszt wysyłki wynosi 15 zł. Zamówienia nadajemy błyskawicznie w 24h do Paczkomatu InPost lub kurierem.',
   },
   {
     q: 'Czym różnią się wersje Vented Plate i co zawiera zestaw?',

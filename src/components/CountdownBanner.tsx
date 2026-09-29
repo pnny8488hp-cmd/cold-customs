@@ -28,7 +28,7 @@ export const CountdownBanner: React.FC = () => {
           </div>
 
           <p className="text-zinc-200 truncate font-medium">
-            Zamów przed <strong className="text-white font-bold">{settings.cutoffHour}:00</strong>, a wyślemy dzisiaj Paczkomatem!
+            Zamów przed <strong className="text-white font-bold">{settings.cutoffHour}:00</strong>, a paczkę wyślemy jeszcze dzisiaj!
           </p>
 
           <div className="flex items-center gap-1 shrink-0 ml-1">
@@ -47,7 +47,11 @@ export const CountdownBanner: React.FC = () => {
         <div className="flex items-center justify-center gap-2 sm:gap-3 text-zinc-300 truncate">
           <Truck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
           <span className="font-medium text-white">
-            {settings.customNotice || 'Błyskawiczna wysyłka w 24-48h'}
+            {settings.customNotice || (
+              <>
+                Zamów przed <strong className="text-white font-bold">{settings.cutoffHour}:00</strong>, a paczkę wyślemy jeszcze dzisiaj!
+              </>
+            )}
           </span>
           <span className="text-zinc-600">·</span>
           <span className="text-zinc-400 hidden xs:inline">Paczkomaty InPost & Kurier</span>

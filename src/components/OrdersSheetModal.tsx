@@ -563,7 +563,9 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
       }
       if (res.ok && data.success) {
         setLogoSuccessNotice('✓ Oryginalne logo zostało pomyślnie zapisane! Zaktualizowano logo strony oraz ikony dla wyszukiwarki Google.');
-        setLogoVersion(Date.now());
+        const newVer = Date.now();
+        setLogoVersion(newVer);
+        window.dispatchEvent(new CustomEvent('cc-logo-updated', { detail: newVer }));
         setLogoPreview(null);
       } else {
         setLogoSuccessNotice(`Błąd zapisu logo: ${data.error || 'Serwer odrzucił żądanie'}`);
@@ -608,8 +610,8 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
       const drawH = baseH * fitScale * scaleFactor;
 
       // Środek to (500, 500)
-      const posX = 500 - (drawW / 2) + (logoOffsetX * 2.5);
-      const posY = 500 - (drawH / 2) + (logoOffsetY * 2.5);
+      const posX = 500 - (drawW / 2) + (logoOffsetX * 3.125);
+      const posY = 500 - (drawH / 2) + (logoOffsetY * 3.125);
 
       ctx.drawImage(img, posX, posY, drawW, drawH);
 
@@ -630,7 +632,9 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
 
       if (res.ok && data.success) {
         setLogoSuccessNotice('✓ Logo zostało pomyślnie wycentrowane i zaktualizowane na całej stronie oraz w Google!');
-        setLogoVersion(Date.now());
+        const newVer = Date.now();
+        setLogoVersion(newVer);
+        window.dispatchEvent(new CustomEvent('cc-logo-updated', { detail: newVer }));
         setLogoOffsetX(0);
         setLogoOffsetY(0);
         setLogoScale(100);
@@ -1065,7 +1069,7 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
                           Wysyłka DZISIAJ:
                         </span>
                         <span className="text-zinc-200">
-                          Zamów przed <strong className="text-white">{shippingCutoffHour}:00</strong>, a wyślemy dzisiaj Paczkomatem!
+                          Zamów przed <strong className="text-white">{shippingCutoffHour}:00</strong>, a paczkę wyślemy jeszcze dzisiaj!
                         </span>
                       </div>
                     ) : (

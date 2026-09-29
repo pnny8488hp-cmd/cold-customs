@@ -7,6 +7,16 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ onOpenOrdersSheet, onOpenLegal }) => {
+  const [logoVersion, setLogoVersion] = React.useState(() => Date.now());
+
+  React.useEffect(() => {
+    const handleLogoUpdate = (e: any) => {
+      setLogoVersion(e.detail || Date.now());
+    };
+    window.addEventListener('cc-logo-updated', handleLogoUpdate);
+    return () => window.removeEventListener('cc-logo-updated', handleLogoUpdate);
+  }, []);
+
   return (
     <footer className="py-12 bg-[#040406] border-t border-white/5 text-zinc-500 text-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
@@ -14,7 +24,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenOrdersSheet, onOpenLegal }
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
             <img
-              src="/logo.jpg"
+              src={`/logo.jpg?v=${logoVersion}`}
               alt="Cold Customs Logo"
               className="w-8 h-8 aspect-square rounded-lg shadow border border-white/10 shrink-0 object-contain bg-black p-0.5"
               onError={(e) => {

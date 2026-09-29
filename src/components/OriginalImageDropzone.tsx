@@ -87,8 +87,8 @@ export const OriginalImageDropzone: React.FC<OriginalImageDropzoneProps> = ({
     { key: 'caliper', label: '3. Zacisk 2-tłoczkowy', desc: 'Aluminiowy zacisk hamulcowy z klockami' },
     { key: 'rotor', label: '4. Tarcza 240 mm', desc: 'Stalowa tarcza 240 mm o grubości 3,2 mm' },
     { key: 'guard', label: '5. Wspornik CNC', desc: 'Czarny frezowany adapter zacisku' },
-    { key: 'plateClean', label: '6. Front Plate (Bez naklejki)', desc: 'Czysta czarna tablica ze zintegrowanymi siatkami (119 zł)' },
-    { key: 'plateSticker', label: '7. Front Plate (Z okleiną #1)', desc: 'Tablica z fabrycznie naklejoną okleiną gratis (119 zł)' },
+    { key: 'plateClean', label: '6. Front Plate (Bez naklejki)', desc: 'Czysta czarna tablica ze zintegrowanymi siatkami (149 zł)' },
+    { key: 'plateSticker', label: '7. Front Plate (Z okleiną #1)', desc: 'Tablica z fabrycznie naklejoną okleiną gratis (149 zł)' },
   ];
 
   return (

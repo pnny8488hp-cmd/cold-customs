@@ -422,13 +422,13 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
                       <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                     </span>
                     <span className="leading-snug">
-                      <strong className="text-white">Wysyłka DZISIAJ!</strong> Zamówienie złożone przed {settings.cutoffHour}:00 wyślemy jeszcze dzisiaj Paczkomatem InPost.
+                      <strong className="text-white">Wysyłka DZISIAJ!</strong> Zamów przed {settings.cutoffHour}:00, a paczkę wyślemy jeszcze dzisiaj Paczkomatem InPost.
                     </span>
                   </div>
                 ) : (
                   <div className="p-2.5 rounded-xl bg-zinc-900 border border-white/10 flex items-center gap-2 text-xs text-zinc-300">
                     <Truck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                    <span>{settings.customNotice || 'Błyskawiczna wysyłka w 24-48h'} · Paczkomaty InPost & Kurier</span>
+                    <span>{settings.customNotice || `Zamów przed ${settings.cutoffHour}:00, a paczkę wyślemy jeszcze dzisiaj!`} · Paczkomaty InPost & Kurier</span>
                   </div>
                 )}
               </div>

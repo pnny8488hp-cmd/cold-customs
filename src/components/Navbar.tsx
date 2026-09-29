@@ -16,6 +16,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   totalCartPrice,
   isCartBouncing,
 }) => {
+  const [logoVersion, setLogoVersion] = React.useState(() => Date.now());
+
+  React.useEffect(() => {
+    const handleLogoUpdate = (e: any) => {
+      setLogoVersion(e.detail || Date.now());
+    };
+    window.addEventListener('cc-logo-updated', handleLogoUpdate);
+    return () => window.removeEventListener('cc-logo-updated', handleLogoUpdate);
+  }, []);
+
   return (
     <header className="fixed top-[44px] left-0 right-0 z-40 glass-nav transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -26,7 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="text-lg font-extrabold tracking-tight text-white hover:opacity-90 transition-opacity flex items-center gap-2.5"
           >
             <img
-              src="/logo.jpg"
+              src={`/logo.jpg?v=${logoVersion}`}
               alt="Cold Customs Logo"
               className="w-10 h-10 aspect-square rounded-xl shadow-md border border-white/10 shrink-0 object-contain bg-black p-0.5"
               onError={(e) => {
