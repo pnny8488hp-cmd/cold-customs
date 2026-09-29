@@ -27,13 +27,31 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
 }) => {
   const { images } = useProductImages();
   const [copied, setCopied] = React.useState(false);
+  const [copiedUrl, setCopiedUrl] = React.useState(false);
 
-  if (!isOpen || !orderData) return null;
+  if (!isOpen) return null;
+
+  const activeData: OrderSuccessData = orderData || {
+    orderNumber: 'UBB-DEMO',
+    totalPrice: 799,
+    quantity: 1,
+    paymentMethod: 'blik_phone',
+    deliveryMethod: 'paczkomat',
+    addressOrLocker: 'Paczkomat InPost',
+    customerName: 'Klient Cold Customs',
+  };
 
   const handleCopyOrderNumber = () => {
-    navigator.clipboard.writeText(orderData.orderNumber);
+    navigator.clipboard.writeText(activeData.orderNumber);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyConversionUrl = () => {
+    const fullUrl = `${window.location.origin}/#zamowienie-zlozone`;
+    navigator.clipboard.writeText(fullUrl);
+    setCopiedUrl(true);
+    setTimeout(() => setCopiedUrl(false), 2000);
   };
 
   return (
@@ -97,7 +115,7 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
           {/* Order number copy box */}
           <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-zinc-900/90 border border-white/10 rounded-2xl">
             <span className="text-xs text-zinc-400">Numer zamówienia:</span>
-            <span className="text-sm font-bold text-white font-mono">{orderData.orderNumber}</span>
+            <span className="text-sm font-bold text-white font-mono">{activeData.orderNumber}</span>
             <button
               onClick={handleCopyOrderNumber}
               className="p-1 text-zinc-400 hover:text-emerald-400 transition-colors ml-1 cursor-pointer"
@@ -110,20 +128,20 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
 
         {/* Payment Instructions Card */}
         <div className="mt-6 p-4 rounded-2xl bg-zinc-900/80 border border-white/10 relative z-10 text-left">
-          {orderData.paymentMethod === 'cod' && (
+          {activeData.paymentMethod === 'cod' && (
             <div>
               <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm mb-1.5">
                 <span>💵</span>
                 <span>Płatność za pobraniem (0 zł dopłaty)</span>
               </div>
               <p className="text-xs text-zinc-300 leading-relaxed">
-                Kwotę <strong className="text-white">{orderData.totalPrice} zł</strong> zapłacisz dopiero przy odbiorze:
+                Kwotę <strong className="text-white">{activeData.totalPrice} zł</strong> zapłacisz dopiero przy odbiorze:
                 kartą lub kodem BLIK w ekranie Paczkomatu (lub u kuriera).
               </p>
             </div>
           )}
 
-          {orderData.paymentMethod === 'blik_phone' && (
+          {activeData.paymentMethod === 'blik_phone' && (
             <div>
               <div className="flex items-center gap-2 text-amber-400 font-bold text-sm mb-1.5">
                 <span>📱</span>
@@ -144,12 +162,12 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
                 </span>
               </p>
               <p className="text-xs text-zinc-400 mt-2">
-                W tytule przelewu podaj koniecznie numer: <strong className="text-white font-mono bg-zinc-800 px-1.5 py-0.5 rounded">{orderData.orderNumber}</strong>.
+                W tytule przelewu podaj koniecznie numer: <strong className="text-white font-mono bg-zinc-800 px-1.5 py-0.5 rounded">{activeData.orderNumber}</strong>.
               </p>
             </div>
           )}
 
-          {orderData.paymentMethod === 'transfer' && (
+          {activeData.paymentMethod === 'transfer' && (
             <div>
               <div className="flex items-center gap-2 text-blue-400 font-bold text-sm mb-2">
                 <span>🏦</span>
@@ -179,13 +197,13 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
                   </div>
                   <div>
                     <span className="text-zinc-500 block">Kwota:</span>
-                    <span className="text-white font-bold">{orderData.totalPrice} zł</span>
+                    <span className="text-white font-bold">{activeData.totalPrice} zł</span>
                   </div>
                 </div>
                 <div className="pt-1">
                   <span className="text-zinc-500 block text-[11px]">Tytuł przelewu:</span>
                   <span className="text-white font-mono font-bold bg-zinc-800 px-2 py-0.5 rounded text-xs inline-block mt-0.5">
-                    {orderData.orderNumber}
+                    {activeData.orderNumber}
                   </span>
                 </div>
               </div>
@@ -198,20 +216,22 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
           <div className="flex justify-between text-zinc-400">
             <span>Produkt:</span>
             <span className="text-white font-medium text-right">
-              Ultra Bee Brakes ({orderData.quantity} szt.)
+              Ultra Bee Brakes ({activeData.quantity} szt.)
             </span>
           </div>
 
           <div className="flex justify-between text-zinc-400">
             <span>Dostawa:</span>
-            <span className="text-emerald-400 font-medium">0 zł (Darmowa wysyłka)</span>
+            <span className="text-emerald-400 font-medium">
+              {activeData.totalPrice >= 399 ? '0 zł (Darmowa wysyłka)' : '15 zł'}
+            </span>
           </div>
 
           <div className="flex justify-between text-zinc-400">
             <span>Punkt odbioru:</span>
             <span className="text-white font-medium text-right truncate max-w-[240px]">
-              {orderData.deliveryMethod === 'paczkomat'
-                ? orderData.paczkomatName ? `Paczkomat ${orderData.paczkomatName}` : orderData.addressOrLocker
+              {activeData.deliveryMethod === 'paczkomat'
+                ? activeData.paczkomatName ? `Paczkomat ${activeData.paczkomatName}` : activeData.addressOrLocker
                 : 'Kurier (pod wskazany adres)'}
             </span>
           </div>
@@ -219,19 +239,37 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
           <div className="flex justify-between items-baseline pt-2 border-t border-white/5 text-sm">
             <span className="font-semibold text-zinc-300">Łącznie do zapłaty:</span>
             <span className="font-extrabold text-white text-base tabular-nums">
-              {orderData.totalPrice} zł
+              {activeData.totalPrice} zł
             </span>
           </div>
         </div>
 
         {/* Bottom Button */}
-        <div className="mt-6 relative z-10">
+        <div className="mt-6 relative z-10 space-y-3">
           <button
             onClick={onClose}
             className="w-full py-3.5 px-6 rounded-2xl bg-white text-black hover:bg-zinc-200 font-bold text-sm transition-all shadow-lg shadow-white/10 cursor-pointer"
           >
             Świetnie, wróć do sklepu
           </button>
+
+          {/* Google Ads conversion link info */}
+          <div className="p-2.5 rounded-xl bg-zinc-950/80 border border-white/10 flex items-center justify-between text-[11px] text-zinc-400">
+            <div className="flex items-center gap-1.5 truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+              <span>Link konwersji Google Ads:</span>
+              <code className="text-emerald-400 font-mono text-[10px] bg-black px-1.5 py-0.5 rounded border border-white/10 truncate max-w-[140px] sm:max-w-[180px]">
+                #zamowienie-zlozone
+              </code>
+            </div>
+            <button
+              type="button"
+              onClick={handleCopyConversionUrl}
+              className="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 uppercase tracking-wider ml-2 shrink-0 cursor-pointer transition-colors"
+            >
+              {copiedUrl ? 'Skopiowano!' : 'Kopiuj'}
+            </button>
+          </div>
         </div>
       </motion.div>
     </div>

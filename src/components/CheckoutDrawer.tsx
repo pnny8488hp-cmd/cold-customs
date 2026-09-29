@@ -182,6 +182,10 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
         onClose();
       } else {
         setStep('confirmation');
+        try {
+          window.history.pushState(null, '', `/#zamowienie-zlozone?nr=${generatedOrderNum}&kwota=${totalPrice}`);
+          window.dispatchEvent(new HashChangeEvent('hashchange'));
+        } catch {}
       }
     }
   };

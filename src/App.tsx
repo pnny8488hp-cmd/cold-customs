@@ -91,6 +91,13 @@ function StoreContent() {
       const h = window.location.hash.toLowerCase();
       if (h === '#orders' || h === '#arkusz' || h === '#admin' || h === '#panel') {
         setIsOrdersSheetOpen(true);
+      } else if (
+        h.startsWith('#zamowienie-zlozone') ||
+        h.startsWith('#dziekujemy') ||
+        h.startsWith('#sukces') ||
+        h.startsWith('#order-success')
+      ) {
+        setIsSuccessModalOpen(true);
       }
     };
 
@@ -115,6 +122,52 @@ function StoreContent() {
   const handleOrderSuccess = (data: OrderSuccessData) => {
     setOrderSuccessData(data);
     setIsSuccessModalOpen(true);
+
+    try {
+      // Dedykowany adres URL z hashem dla Google Ads / Analytics do zliczania konwersji
+      const successUrl = `/#zamowienie-zlozone?nr=${encodeURIComponent(data.orderNumber)}&kwota=${data.totalPrice}`;
+      window.history.pushState({ orderId: data.orderNumber }, '', successUrl);
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+
+      // Obsługa e-commerce dla Google Ads i Google Analytics 4
+      if (typeof window !== 'undefined') {
+        const win = window as any;
+        win.dataLayer = win.dataLayer || [];
+        win.dataLayer.push({
+          event: 'purchase',
+          conversion_id: data.orderNumber,
+          transaction_id: data.orderNumber,
+          value: data.totalPrice,
+          currency: 'PLN',
+          payment_type: data.paymentMethod,
+          shipping_tier: data.deliveryMethod,
+        });
+        if (typeof win.gtag === 'function') {
+          win.gtag('event', 'purchase', {
+            transaction_id: data.orderNumber,
+            value: data.totalPrice,
+            currency: 'PLN',
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Błąd aktualizacji URL po zakupie:', e);
+    }
+  };
+
+  const handleCloseSuccessModal = () => {
+    setIsSuccessModalOpen(false);
+    try {
+      const h = window.location.hash.toLowerCase();
+      if (
+        h.startsWith('#zamowienie-zlozone') ||
+        h.startsWith('#dziekujemy') ||
+        h.startsWith('#sukces') ||
+        h.startsWith('#order-success')
+      ) {
+        window.history.pushState(null, '', window.location.pathname);
+      }
+    } catch {}
   };
 
   const handleOpenUploader = () => {
@@ -319,7 +372,7 @@ function StoreContent() {
       {/* Prominent Centered Order Success Modal */}
       <OrderSuccessModal
         isOpen={isSuccessModalOpen}
-        onClose={() => setIsSuccessModalOpen(false)}
+        onClose={handleCloseSuccessModal}
         orderData={orderSuccessData}
       />
 
