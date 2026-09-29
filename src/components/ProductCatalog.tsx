@@ -43,11 +43,11 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
               Katalog Cold Customs
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white" style={{ textWrap: 'balance' }}>
-              Dostępne Produkty
+              Części i Akcesoria Motocyklowe
             </h2>
           </div>
           <p className="text-sm text-zinc-400 max-w-md">
-            Wybierz produkt, aby zobaczyć szczegóły lub dodaj go bezpośrednio do koszyka. Darmowa wysyłka od 399 zł.
+            Wyczynowe komponenty, układy hamulcowe i akcesoria do motocykli oraz e-moto. Darmowa wysyłka od 399 zł.
           </p>
         </div>
 

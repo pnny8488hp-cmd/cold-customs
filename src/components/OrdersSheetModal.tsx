@@ -4,7 +4,8 @@ import {
   X, Download, Search, CheckCircle2, Clock, Truck, 
   Package, RefreshCw, Save, ExternalLink, ShieldAlert,
   Lock, KeyRound, LogOut, Eye, EyeOff, Trash2,
-  Bell, Play, Sparkles, Plus, Check
+  Bell, Play, Sparkles, Plus, Check, Upload, Image as ImageIcon,
+  Sliders, Crosshair, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, RotateCcw, ZoomIn, ZoomOut
 } from 'lucide-react';
 import { Order } from '../types/order';
 
@@ -28,8 +29,26 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
   const [isConfirmClearAll, setIsConfirmClearAll] = useState(false);
   const [deleteNotice, setDeleteNotice] = useState<string | null>(null);
 
-  // Admin Tab: 'orders' | 'notifications'
-  const [adminTab, setAdminTab] = useState<'orders' | 'notifications'>('orders');
+  // Admin Tab: 'orders' | 'shipping' | 'notifications' | 'branding'
+  const [adminTab, setAdminTab] = useState<'orders' | 'shipping' | 'notifications' | 'branding'>('orders');
+
+  // Same-day shipping management state
+  const [sameDayShippingEnabled, setSameDayShippingEnabled] = useState(true);
+  const [shippingCutoffHour, setShippingCutoffHour] = useState(16);
+  const [shippingCustomNotice, setShippingCustomNotice] = useState('');
+  const [savingShipping, setSavingShipping] = useState(false);
+  const [shippingSavedMsg, setShippingSavedMsg] = useState(false);
+
+  // Logo upload & adjustment state
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoSuccessNotice, setLogoSuccessNotice] = useState<string | null>(null);
+  const [logoVersion, setLogoVersion] = useState<number>(Date.now());
+  const [logoOffsetX, setLogoOffsetX] = useState(0); // in px (-150 to +150)
+  const [logoOffsetY, setLogoOffsetY] = useState(0); // in px (-150 to +150)
+  const [logoScale, setLogoScale] = useState(100); // in percent (50 to 160)
+  const [showCrosshairs, setShowCrosshairs] = useState(true);
+  const [savingAdjustedLogo, setSavingAdjustedLogo] = useState(false);
 
   // Stock inventory management (separate for brakes and plates)
   const [stockBrakes, setStockBrakes] = useState<number | string>(10);
@@ -92,6 +111,67 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
       }
     } catch (e) {
       console.error('Błąd pobierania ustawień powiadomień:', e);
+    }
+  };
+
+  const fetchShippingSettings = async () => {
+    try {
+      const res = await fetch('/api/shipping-settings');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.settings) {
+          setSameDayShippingEnabled(data.settings.sameDayShippingEnabled ?? true);
+          setShippingCutoffHour(data.settings.cutoffHour ?? 16);
+          setShippingCustomNotice(data.settings.customNotice ?? '');
+        }
+      }
+    } catch (e) {
+      console.error('Błąd pobierania ustawień wysyłki:', e);
+    }
+  };
+
+  const handleSaveShippingSettings = async (overrideEnabled?: boolean) => {
+    const pin = getSavedPin();
+    if (!pin) return;
+
+    setSavingShipping(true);
+    try {
+      const targetEnabled = overrideEnabled !== undefined ? overrideEnabled : sameDayShippingEnabled;
+      const payload = {
+        sameDayShippingEnabled: targetEnabled,
+        cutoffHour: Number(shippingCutoffHour),
+        customNotice: shippingCustomNotice,
+      };
+
+      const res = await fetch('/api/shipping-settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-pin': pin,
+          'x-admin-password': pin,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.settings) {
+          setSameDayShippingEnabled(data.settings.sameDayShippingEnabled);
+          setShippingCutoffHour(data.settings.cutoffHour);
+          setShippingCustomNotice(data.settings.customNotice);
+          try {
+            localStorage.setItem('cc_shipping_settings', JSON.stringify(data.settings));
+          } catch {}
+        }
+        setShippingSavedMsg(true);
+        setTimeout(() => setShippingSavedMsg(false), 2500);
+      } else {
+        alert('Nie udało się zapisać ustawień wysyłki.');
+      }
+    } catch {
+      alert('Błąd połączenia podczas zapisu ustawień wysyłki.');
+    } finally {
+      setSavingShipping(false);
     }
   };
 
@@ -200,6 +280,7 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
         setIsAuthenticated(true);
         fetchStock();
         fetchNotificationSettings();
+        fetchShippingSettings();
       } else if (res.status === 401) {
         setIsAuthenticated(false);
         sessionStorage.removeItem('ubb_admin_pin');
@@ -419,6 +500,149 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
     } finally {
       setDeletingId(null);
       setIsConfirmClearAll(false);
+    }
+  };
+
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const rawBase64 = reader.result as string;
+      // Optimize image via HTML5 Canvas so even large phone photos upload smoothly without exceeding payload limits
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 1200;
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const optimized = canvas.toDataURL('image/jpeg', 0.94);
+          setLogoPreview(optimized);
+        } else {
+          setLogoPreview(rawBase64);
+        }
+        setLogoSuccessNotice(null);
+      };
+      img.onerror = () => {
+        setLogoPreview(rawBase64);
+        setLogoSuccessNotice(null);
+      };
+      img.src = rawBase64;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUploadLogo = async () => {
+    if (!logoPreview) return;
+    setUploadingLogo(true);
+    setLogoSuccessNotice(null);
+    try {
+      const res = await fetch('/api/upload-logo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64: logoPreview }),
+      });
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch {
+        data = { error: 'Serwer nie zwrócił poprawnego JSON' };
+      }
+      if (res.ok && data.success) {
+        setLogoSuccessNotice('✓ Oryginalne logo zostało pomyślnie zapisane! Zaktualizowano logo strony oraz ikony dla wyszukiwarki Google.');
+        setLogoVersion(Date.now());
+        setLogoPreview(null);
+      } else {
+        setLogoSuccessNotice(`Błąd zapisu logo: ${data.error || 'Serwer odrzucił żądanie'}`);
+      }
+    } catch (e: any) {
+      setLogoSuccessNotice(`Błąd połączenia podczas wysyłania: ${e?.message || 'Spróbuj ponownie'}`);
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const handleSaveAdjustedLogo = async () => {
+    setSavingAdjustedLogo(true);
+    setLogoSuccessNotice(null);
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1000;
+      canvas.height = 1000;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Nie można utworzyć kontekstu canvas');
+
+      // Tło czarne
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, 1000, 1000);
+
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = logoPreview || `/logo.jpg?t=${logoVersion}`;
+
+      await new Promise((resolve, reject) => {
+        img.onload = () => resolve(true);
+        img.onerror = () => reject(new Error('Nie udało się załadować obrazu logo'));
+      });
+
+      // Rysujemy logo z przesunięciem i skalą
+      const scaleFactor = logoScale / 100;
+      const baseW = img.width || 800;
+      const baseH = img.height || 800;
+      const maxDim = 850;
+      const fitScale = Math.min(maxDim / baseW, maxDim / baseH);
+      const drawW = baseW * fitScale * scaleFactor;
+      const drawH = baseH * fitScale * scaleFactor;
+
+      // Środek to (500, 500)
+      const posX = 500 - (drawW / 2) + (logoOffsetX * 2.5);
+      const posY = 500 - (drawH / 2) + (logoOffsetY * 2.5);
+
+      ctx.drawImage(img, posX, posY, drawW, drawH);
+
+      const base64Data = canvas.toDataURL('image/jpeg', 0.95);
+
+      const res = await fetch('/api/upload-logo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64: base64Data }),
+      });
+
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch {
+        data = { error: 'Serwer nie zwrócił poprawnego JSON' };
+      }
+
+      if (res.ok && data.success) {
+        setLogoSuccessNotice('✓ Logo zostało pomyślnie wycentrowane i zaktualizowane na całej stronie oraz w Google!');
+        setLogoVersion(Date.now());
+        setLogoOffsetX(0);
+        setLogoOffsetY(0);
+        setLogoScale(100);
+        setLogoPreview(null);
+      } else {
+        setLogoSuccessNotice(`Błąd zapisu logo: ${data.error || 'Serwer odrzucił żądanie'}`);
+      }
+    } catch (e: any) {
+      console.error('Błąd centrowania:', e);
+      setLogoSuccessNotice(`Błąd podczas wyśrodkowywania: ${e?.message || 'Spróbuj ponownie'}`);
+    } finally {
+      setSavingAdjustedLogo(false);
     }
   };
 
@@ -648,6 +872,26 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
 
               <button
                 type="button"
+                onClick={() => setAdminTab('shipping')}
+                className={`pb-2.5 px-3 text-xs font-bold transition-all border-b-2 flex items-center gap-2 cursor-pointer ${
+                  adminTab === 'shipping'
+                    ? 'border-emerald-500 text-white'
+                    : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Truck className="w-4 h-4" />
+                <span>Wysyłka (Przed 16:00)</span>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                  sameDayShippingEnabled
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                    : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                }`}>
+                  {sameDayShippingEnabled ? 'Włączona (do 16:00)' : 'Wyłączona (poza domem)'}
+                </span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setAdminTab('notifications')}
                 className={`pb-2.5 px-3 text-xs font-bold transition-all border-b-2 flex items-center gap-2 cursor-pointer ${
                   adminTab === 'notifications'
@@ -665,9 +909,181 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
                   {notifEnabled ? 'Włączone' : 'Wyłączone'}
                 </span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setAdminTab('branding')}
+                className={`pb-2.5 px-3 text-xs font-bold transition-all border-b-2 flex items-center gap-2 cursor-pointer ${
+                  adminTab === 'branding'
+                    ? 'border-emerald-500 text-white'
+                    : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <ImageIcon className="w-4 h-4" />
+                <span>Logo & Ikonka Google</span>
+              </button>
             </div>
 
-            {adminTab === 'notifications' ? (
+            {adminTab === 'shipping' ? (
+              <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
+                {/* Status Notice */}
+                {shippingSavedMsg && (
+                  <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center justify-between animate-fadeIn">
+                    <span className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4" />
+                      Ustawienia wysyłki zostały pomyślnie zapisane i wdrożone na stronie!
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShippingSavedMsg(false)}
+                      className="text-emerald-400 hover:text-white cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Master Switch & Settings Card */}
+                <div className="p-5 sm:p-6 rounded-2xl bg-zinc-900/60 border border-white/10 space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-white/10">
+                    <div>
+                      <div className="flex items-center gap-2.5">
+                        <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          <Truck className="w-4 h-4" />
+                        </span>
+                        <h3 className="text-base font-bold text-white">
+                          Wysyłka tego samego dnia (Przed 16:00)
+                        </h3>
+                      </div>
+                      <p className="text-xs text-zinc-400 mt-1 max-w-xl">
+                        Gdy jesteś w domu i możesz nadać paczkę dzisiaj, włącz tę opcję. Klienci zobaczą licznik odliczający do 16:00. Jeśli wyjeżdżasz lub nie ma Cię w domu, po prostu wyłącz ten przełącznik – klienci zobaczą bezpieczny komunikat o wysyłce w 24-48h.
+                      </p>
+                    </div>
+
+                    {/* Master Switch Toggle */}
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-semibold text-zinc-300">
+                        {sameDayShippingEnabled ? 'WŁĄCZONA' : 'WYŁĄCZONA'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextVal = !sameDayShippingEnabled;
+                          setSameDayShippingEnabled(nextVal);
+                          handleSaveShippingSettings(nextVal);
+                        }}
+                        className={`w-14 h-8 rounded-full transition-colors relative cursor-pointer border ${
+                          sameDayShippingEnabled
+                            ? 'bg-emerald-500 border-emerald-400'
+                            : 'bg-zinc-800 border-white/20'
+                        }`}
+                      >
+                        <motion.div
+                          className="w-6 h-6 rounded-full bg-white shadow-md absolute top-0.5 left-1"
+                          animate={{ x: sameDayShippingEnabled ? 24 : 0 }}
+                          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Settings Form */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-200 mb-2">
+                        Godzina graniczna nadania (domyślnie 16:00):
+                      </label>
+                      <select
+                        value={shippingCutoffHour}
+                        onChange={(e) => setShippingCutoffHour(parseInt(e.target.value, 10))}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-white/15 text-white text-xs font-semibold focus:outline-none focus:border-emerald-500 cursor-pointer"
+                      >
+                        <option value="12">12:00 (Południe)</option>
+                        <option value="14">14:00</option>
+                        <option value="15">15:00</option>
+                        <option value="16">16:00 (Rekomendowana dla InPost)</option>
+                        <option value="17">17:00</option>
+                        <option value="18">18:00</option>
+                      </select>
+                      <span className="text-[11px] text-zinc-500 mt-1.5 block">
+                        Do tej godziny klienci widzą odliczanie „Wysyłka dzisiaj”. Po tej godzinie licznik automatycznie przełącza się na informację o wysyłce w kolejny dzień roboczy.
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-200 mb-2">
+                        Komunikat, gdy wyłączone (np. jesteś poza domem):
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="np. Błyskawiczna wysyłka w 24-48h"
+                        value={shippingCustomNotice}
+                        onChange={(e) => setShippingCustomNotice(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-white/15 text-white text-xs focus:outline-none focus:border-emerald-500 placeholder-zinc-600"
+                      />
+                      <span className="text-[11px] text-zinc-500 mt-1.5 block">
+                        Pozostaw puste, aby wyświetlać standardowe: „Błyskawiczna wysyłka w 24-48h”.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Save button */}
+                  <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                    <span className="text-xs text-zinc-400">
+                      Zmiany zostaną natychmiast zastosowane na Twojej stronie bez konieczności restartu serwera.
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSaveShippingSettings()}
+                      disabled={savingShipping}
+                      className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-extrabold text-xs transition-all shadow-md cursor-pointer flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>{savingShipping ? 'Zapisywanie...' : 'Zapisz ustawienia wysyłki'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Live Preview Card */}
+                <div className="p-5 rounded-2xl bg-zinc-900/40 border border-white/10 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider block">
+                      Podgląd na żywo (jak widzi to klient na stronie):
+                    </span>
+                    <span className="text-[11px] text-zinc-500">
+                      Aktualny stan: {sameDayShippingEnabled ? '🟢 Aktywna' : '🔴 Wyłączona'}
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-zinc-950 border border-white/15 flex items-center justify-center">
+                    {sameDayShippingEnabled ? (
+                      <div className="flex items-center gap-3 text-xs flex-wrap justify-center">
+                        <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
+                          <Truck className="w-4 h-4 text-emerald-400" />
+                          Wysyłka DZISIAJ:
+                        </span>
+                        <span className="text-zinc-200">
+                          Zamów przed <strong className="text-white">{shippingCutoffHour}:00</strong>, a wyślemy dzisiaj Paczkomatem!
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-xs text-zinc-300">
+                        <Truck className="w-4 h-4 text-emerald-400" />
+                        <span className="font-semibold text-white">
+                          {shippingCustomNotice || 'Błyskawiczna wysyłka w 24-48h'}
+                        </span>
+                        <span className="text-zinc-600">·</span>
+                        <span className="text-zinc-400">Paczkomaty InPost & Kurier</span>
+                        <span className="text-zinc-600">·</span>
+                        <span className="text-emerald-400 font-semibold">Darmowa dostawa od 399 zł</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : adminTab === 'notifications' ? (
               <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
                 {/* Master Switch & Settings Card */}
                 <div className="p-5 rounded-2xl bg-zinc-900/60 border border-white/10 space-y-5">
@@ -938,6 +1354,497 @@ export const OrdersSheetModal: React.FC<OrdersSheetModalProps> = ({ isOpen, onCl
                       </div>
                     ))}
                   </div>
+                </div>
+              </div>
+            ) : adminTab === 'branding' ? (
+              <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
+                {/* Header info */}
+                <div className="p-5 rounded-2xl bg-zinc-900/60 border border-white/10 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <ImageIcon className="w-4 h-4" />
+                    </span>
+                    <h3 className="text-base font-bold text-white">
+                      Oficjalne Logo Sklepu & Ikonka (Favicon) dla Google
+                    </h3>
+                  </div>
+                  <p className="text-xs text-zinc-400 max-w-2xl leading-relaxed">
+                    Tutaj możesz wgrać dokładnie swój oryginalny plik graficzny (np. <span className="text-white font-mono font-semibold">un0T6.jpg</span>). Plik zostanie natychmiast zapisany na serwerze w formacie 1:1 bez żadnego generowania AI, a system automatycznie utworzy z niego ikony favicon dla wyszukiwarki Google i przeglądarek.
+                  </p>
+                </div>
+
+                {logoSuccessNotice && (
+                  <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center justify-between">
+                    <span>{logoSuccessNotice}</span>
+                    <button
+                      type="button"
+                      onClick={() => setLogoSuccessNotice(null)}
+                      className="text-emerald-400 hover:text-white cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Centering and Calibration Studio */}
+                <div className="p-5 sm:p-6 rounded-2xl bg-zinc-900/60 border border-white/10 space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-white/10">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="p-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          <Sliders className="w-4 h-4" />
+                        </span>
+                        <h4 className="text-base font-bold text-white">
+                          Studio Wyśrodkowania & Dopasowania Loga
+                        </h4>
+                      </div>
+                      <p className="text-xs text-zinc-400 mt-1">
+                        Przesuwaj suwakami lub przyciskami mikro-korekt, aby znak graficzny był w 100% równo wycentrowany w kwadracie 1:1.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowCrosshairs(!showCrosshairs)}
+                        className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                          showCrosshairs
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                            : 'bg-zinc-800 text-zinc-400 border-white/10 hover:text-white'
+                        }`}
+                      >
+                        <Crosshair className="w-3.5 h-3.5" />
+                        <span>{showCrosshairs ? 'Celownik: Włączony' : 'Celownik: Wyłączony'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLogoOffsetX(0);
+                          setLogoOffsetY(0);
+                          setLogoScale(100);
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-white/10 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                        title="Zresetuj przesunięcie i skalę"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Wycentruj (Reset)</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    {/* Left: Studio Viewport with Crosshairs */}
+                    <div className="lg:col-span-6 space-y-4">
+                      <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider block">
+                        Obszar roboczy (Kwadrat 1:1):
+                      </span>
+
+                      {/* 1:1 Viewport container */}
+                      <div className="w-full max-w-[320px] aspect-square mx-auto rounded-2xl bg-black border-2 border-white/20 relative overflow-hidden flex items-center justify-center shadow-2xl">
+                        {/* The Logo Image being adjusted */}
+                        <div
+                          className="w-full h-full flex items-center justify-center pointer-events-none transition-transform duration-75"
+                          style={{
+                            transform: `translate(${logoOffsetX}px, ${logoOffsetY}px) scale(${logoScale / 100})`,
+                          }}
+                        >
+                          <img
+                            src={logoPreview || `/logo.jpg?t=${logoVersion}`}
+                            alt="Cold Customs Logo"
+                            className="max-w-[85%] max-h-[85%] object-contain select-none"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/favicon.svg';
+                            }}
+                          />
+                        </div>
+
+                        {/* Centering Crosshairs Guidelines */}
+                        {showCrosshairs && (
+                          <div className="absolute inset-0 pointer-events-none">
+                            {/* Vertical center line */}
+                            <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[1px] bg-red-500/60 shadow-[0_0_4px_rgba(239,68,68,0.8)]" />
+                            {/* Horizontal center line */}
+                            <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[1px] bg-red-500/60 shadow-[0_0_4px_rgba(239,68,68,0.8)]" />
+                            {/* Central alignment circle */}
+                            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full border border-emerald-400/50 shadow-[0_0_8px_rgba(52,211,153,0.3)] pointer-events-none" />
+                            {/* Center dot */}
+                            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-emerald-400 shadow-md" />
+                          </div>
+                        )}
+
+                        <span className="absolute bottom-2 right-2 text-[10px] font-mono text-zinc-500 bg-zinc-950/80 px-2 py-0.5 rounded border border-white/10">
+                          X: {logoOffsetX > 0 ? `+${logoOffsetX}` : logoOffsetX}px · Y: {logoOffsetY > 0 ? `+${logoOffsetY}` : logoOffsetY}px · {logoScale}%
+                        </span>
+                      </div>
+
+                      {/* Real Previews on Website and Google */}
+                      <div className="space-y-3 pt-2">
+                        <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">
+                          Podgląd w rzeczywistych miejscach na stronie:
+                        </span>
+
+                        {/* Navbar Preview */}
+                        <div className="p-3 rounded-xl bg-zinc-950 border border-white/10 flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            {/* Logo in Navbar size */}
+                            <div className="w-10 h-10 rounded-xl overflow-hidden bg-black border border-white/10 flex items-center justify-center p-0.5 relative shrink-0 shadow-md">
+                              <div
+                                className="w-full h-full flex items-center justify-center"
+                                style={{
+                                  transform: `translate(${Math.round(logoOffsetX * 0.12)}px, ${Math.round(logoOffsetY * 0.12)}px) scale(${logoScale / 100})`,
+                                }}
+                              >
+                                <img
+                                  src={logoPreview || `/logo.jpg?t=${logoVersion}`}
+                                  alt="Logo"
+                                  className="max-w-full max-h-full object-contain"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="font-display font-black tracking-wider text-white text-xs leading-tight">
+                                COLD CUSTOMS
+                              </span>
+                              <span className="text-[9px] text-zinc-400 font-medium">
+                                Części Motocyklowe
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-zinc-500 uppercase font-semibold">
+                            Pasek menu (Navbar)
+                          </span>
+                        </div>
+
+                        {/* Google Favicon Preview */}
+                        <div className="p-3 rounded-xl bg-zinc-950 border border-white/10 flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-6 h-6 rounded-md overflow-hidden bg-black border border-white/15 flex items-center justify-center shrink-0">
+                              <div
+                                className="w-full h-full flex items-center justify-center"
+                                style={{
+                                  transform: `translate(${Math.round(logoOffsetX * 0.08)}px, ${Math.round(logoOffsetY * 0.08)}px) scale(${logoScale / 100})`,
+                                }}
+                              >
+                                <img
+                                  src={logoPreview || `/logo.jpg?t=${logoVersion}`}
+                                  alt="Logo"
+                                  className="max-w-full max-h-full object-contain"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-xs font-semibold text-white block">coldcustoms.pl</span>
+                              <span className="text-[10px] text-zinc-500 block">Wynik wyszukiwania Google</span>
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-zinc-500 uppercase font-semibold">
+                            Google Favicon
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Fine-tuning sliders and D-Pad Controls */}
+                    <div className="lg:col-span-6 space-y-6">
+                      <div className="p-4 rounded-xl bg-zinc-950 border border-white/10 space-y-4">
+                        <span className="text-xs font-bold text-white uppercase tracking-wider block">
+                          Precyzyjne suwaki przesunięcia & skali:
+                        </span>
+
+                        {/* Horizontal Offset (X) */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <label className="text-zinc-300 font-medium">
+                              Przesunięcie w poziomie (Oś X):
+                            </label>
+                            <span className="font-mono text-emerald-400 font-bold tabular-nums">
+                              {logoOffsetX > 0 ? `+${logoOffsetX}` : logoOffsetX} px
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setLogoOffsetX((x) => x - 5)}
+                              className="px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-xs text-white border border-white/10 cursor-pointer"
+                              title="-5px w lewo"
+                            >
+                              -5px
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setLogoOffsetX((x) => x - 1)}
+                              className="px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-xs text-white border border-white/10 cursor-pointer"
+                              title="-1px w lewo"
+                            >
+                              -1px
+                            </button>
+                            <input
+                              type="range"
+                              min="-100"
+                              max="100"
+                              value={logoOffsetX}
+                              onChange={(e) => setLogoOffsetX(parseInt(e.target.value, 10))}
+                              className="flex-1 accent-emerald-500 cursor-pointer"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setLogoOffsetX((x) => x + 1)}
+                              className="px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-xs text-white border border-white/10 cursor-pointer"
+                              title="+1px w prawo"
+                            >
+                              +1px
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setLogoOffsetX((x) => x + 5)}
+                              className="px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-xs text-white border border-white/10 cursor-pointer"
+                              title="+5px w prawo"
+                            >
+                              +5px
+                            </button>
+                          </div>
+                          <div className="flex justify-between text-[10px] text-zinc-500">
+                            <span>← W lewo</span>
+                            <span>Środek (0)</span>
+                            <span>W prawo →</span>
+                          </div>
+                        </div>
+
+                        {/* Vertical Offset (Y) */}
+                        <div className="space-y-1.5 pt-2 border-t border-white/5">
+                          <div className="flex items-center justify-between text-xs">
+                            <label className="text-zinc-300 font-medium">
+                              Przesunięcie w pionie (Oś Y):
+                            </label>
+                            <span className="font-mono text-emerald-400 font-bold tabular-nums">
+                              {logoOffsetY > 0 ? `+${logoOffsetY}` : logoOffsetY} px
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setLogoOffsetY((y) => y - 5)}
+                              className="px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-xs text-white border border-white/10 cursor-pointer"
+                              title="-5px w górę"
+                            >
+                              -5px
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setLogoOffsetY((y) => y - 1)}
+                              className="px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-xs text-white border border-white/10 cursor-pointer"
+                              title="-1px w górę"
+                            >
+                              -1px
+                            </button>
+                            <input
+                              type="range"
+                              min="-100"
+                              max="100"
+                              value={logoOffsetY}
+                              onChange={(e) => setLogoOffsetY(parseInt(e.target.value, 10))}
+                              className="flex-1 accent-emerald-500 cursor-pointer"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setLogoOffsetY((y) => y + 1)}
+                              className="px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-xs text-white border border-white/10 cursor-pointer"
+                              title="+1px w dół"
+                            >
+                              +1px
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setLogoOffsetY((y) => y + 5)}
+                              className="px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-xs text-white border border-white/10 cursor-pointer"
+                              title="+5px w dół"
+                            >
+                              +5px
+                            </button>
+                          </div>
+                          <div className="flex justify-between text-[10px] text-zinc-500">
+                            <span>↑ W górę</span>
+                            <span>Środek (0)</span>
+                            <span>W dół ↓</span>
+                          </div>
+                        </div>
+
+                        {/* Zoom / Scale */}
+                        <div className="space-y-1.5 pt-2 border-t border-white/5">
+                          <div className="flex items-center justify-between text-xs">
+                            <label className="text-zinc-300 font-medium">
+                              Rozmiar / Powiększenie znaku:
+                            </label>
+                            <span className="font-mono text-emerald-400 font-bold tabular-nums">
+                              {logoScale}%
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setLogoScale((s) => Math.max(50, s - 5))}
+                              className="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-xs text-white border border-white/10 cursor-pointer"
+                            >
+                              -5%
+                            </button>
+                            <input
+                              type="range"
+                              min="50"
+                              max="150"
+                              value={logoScale}
+                              onChange={(e) => setLogoScale(parseInt(e.target.value, 10))}
+                              className="flex-1 accent-emerald-500 cursor-pointer"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setLogoScale((s) => Math.min(150, s + 5))}
+                              className="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-xs text-white border border-white/10 cursor-pointer"
+                            >
+                              +5%
+                            </button>
+                          </div>
+                          <div className="flex justify-between text-[10px] text-zinc-500">
+                            <span>50% (Mniejsze)</span>
+                            <span>100% (Standard)</span>
+                            <span>150% (Większe)</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Directional D-Pad for Instant Nudging */}
+                      <div className="p-4 rounded-xl bg-zinc-950 border border-white/10 flex flex-col items-center justify-center space-y-2">
+                        <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block text-center mb-1">
+                          Szybkie przesuwanie strzałkami (D-Pad):
+                        </span>
+
+                        <div className="grid grid-cols-3 gap-1.5 w-36">
+                          <div />
+                          <button
+                            type="button"
+                            onClick={() => setLogoOffsetY((y) => y - 3)}
+                            className="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 active:bg-emerald-500/20 text-white border border-white/10 flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                            title="Przesuń w górę"
+                          >
+                            <ChevronUp className="w-4 h-4" />
+                          </button>
+                          <div />
+
+                          <button
+                            type="button"
+                            onClick={() => setLogoOffsetX((x) => x - 3)}
+                            className="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 active:bg-emerald-500/20 text-white border border-white/10 flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                            title="Przesuń w lewo"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setLogoOffsetX(0);
+                              setLogoOffsetY(0);
+                            }}
+                            className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white border border-white/10 flex items-center justify-center text-[10px] font-mono cursor-pointer transition-all"
+                            title="Środek (0,0)"
+                          >
+                            (0,0)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setLogoOffsetX((x) => x + 3)}
+                            className="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 active:bg-emerald-500/20 text-white border border-white/10 flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                            title="Przesuń w prawo"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+
+                          <div />
+                          <button
+                            type="button"
+                            onClick={() => setLogoOffsetY((y) => y + 3)}
+                            className="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 active:bg-emerald-500/20 text-white border border-white/10 flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                            title="Przesuń w dół"
+                          >
+                            <ChevronDown className="w-4 h-4" />
+                          </button>
+                          <div />
+                        </div>
+                      </div>
+
+                      {/* Main Save Action Button */}
+                      <button
+                        type="button"
+                        onClick={handleSaveAdjustedLogo}
+                        disabled={savingAdjustedLogo}
+                        className="w-full py-4 px-6 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-sm uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xl cursor-pointer flex items-center justify-center gap-2.5"
+                      >
+                        {savingAdjustedLogo ? (
+                          <>
+                            <RefreshCw className="w-5 h-5 animate-spin" />
+                            <span>Zapisywanie i generowanie ikon 1:1...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-5 h-5" />
+                            <span>Zastosuj i Zapisz wycentrowane logo</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Upload New Logo Card (Alternative) */}
+                <div className="p-5 sm:p-6 rounded-2xl bg-zinc-900/40 border border-white/10 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1 rounded-lg bg-zinc-800 text-zinc-300 border border-white/10">
+                      <Upload className="w-4 h-4" />
+                    </span>
+                    <h4 className="text-sm font-bold text-white uppercase tracking-wider">
+                      Lub wgraj zupełnie nowy plik logo:
+                    </h4>
+                  </div>
+                  <p className="text-xs text-zinc-400">
+                    Po wybraniu nowego pliku ze smartfona lub komputera, od razu pojawi się on w powyższym oknie centrowania. Będziesz mógł go natychmiast wyśrodkować przed ostatecznym zapisem!
+                  </p>
+
+                  <label className="border-2 border-dashed border-white/20 hover:border-emerald-500/50 rounded-2xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2.5 bg-zinc-950/50 hover:bg-zinc-950/80 group">
+                    <Upload className="w-7 h-7 text-zinc-500 group-hover:text-emerald-400 transition-colors" />
+                    <div>
+                      <span className="text-xs font-bold text-white block group-hover:text-emerald-400 transition-colors">
+                        Wybierz plik ze zdjęciem logo
+                      </span>
+                      <span className="text-[11px] text-zinc-500 mt-0.5 block">
+                        Formaty: JPG, PNG, WEBP
+                      </span>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/jpg"
+                      onChange={handleLogoFileChange}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {/* Direct File Instructions */}
+                <div className="p-5 rounded-2xl bg-zinc-950 border border-white/10 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-400 font-mono text-xs">📁</span>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                      Alternatywa: Bezpośrednie wrzucenie do plików projektu
+                    </h4>
+                  </div>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    Jeśli wolisz wrzucić plik bezpośrednio do repozytorium GitHub lub folderu projektu na serwerze:
+                  </p>
+                  <div className="p-3 rounded-xl bg-zinc-900/80 border border-white/10 font-mono text-xs text-emerald-400 space-y-1">
+                    <div>1. Zmień nazwę swojego pliku na: <span className="text-white font-bold">logo.jpg</span></div>
+                    <div>2. Umieść go w ścieżce: <span className="text-white font-bold">public/logo.jpg</span></div>
+                  </div>
+                  <p className="text-[11px] text-zinc-500">
+                    Strona natychmiast zacznie z niego korzystać, a po wejściu w Google Search Console i kliknięciu „Poproś o zaindeksowanie” Twoja własna ikonka pojawi się w wynikach wyszukiwania Google.
+                  </p>
                 </div>
               </div>
             ) : (

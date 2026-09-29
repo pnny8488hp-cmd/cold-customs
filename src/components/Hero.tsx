@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ShieldCheck, Truck, Check, RotateCcw, Sparkles } from 'lucide-react';
 import { AddToCartButton } from './AddToCartButton';
 import { useProductImages, ImageSlots, defaultImages } from '../context/ImageContext';
+import { useShipping } from '../context/ShippingContext';
 import { ProductItem, ProductVariant, FREE_SHIPPING_THRESHOLD } from '../data/productData';
 
 interface HeroProps {
@@ -24,6 +25,7 @@ export const Hero: React.FC<HeroProps> = ({
   stock,
 }) => {
   const { images } = useProductImages();
+  const { settings, isSameDayActiveNow } = useShipping();
   const [activeTabId, setActiveTabId] = useState<keyof ImageSlots>('kit');
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>(
     activeProduct.variants ? activeProduct.variants[0] : undefined
@@ -436,8 +438,19 @@ export const Hero: React.FC<HeroProps> = ({
                           )}
                         </span>
                       </div>
-                      <span className="text-[11px] text-zinc-500">
-                        {stock > 0 ? 'Wysyłka w 24h' : 'Dostawa wkrótce'}
+                      <span className="text-[11px] text-zinc-400">
+                        {stock > 0 ? (
+                          isSameDayActiveNow ? (
+                            <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping inline-block" />
+                              Wysyłka dziś (zamów do {settings.cutoffHour}:00)
+                            </span>
+                          ) : (
+                            <span>{settings.customNotice || 'Wysyłka w 24h'}</span>
+                          )
+                        ) : (
+                          'Dostawa wkrótce'
+                        )}
                       </span>
                     </div>
                   )}

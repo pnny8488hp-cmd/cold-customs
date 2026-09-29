@@ -1,11 +1,8 @@
-# robots.txt for Cold Customs (Ultra Bee Brakes & Vented Plate)
+# robots.txt for Cold Customs
 User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /data/
-Disallow: /*#admin
-Disallow: /*#orders
 
-# Host & Sitemap
-Host: https://coldcustoms.pl
+# Sitemap
 Sitemap: https://coldcustoms.pl/sitemap.xml

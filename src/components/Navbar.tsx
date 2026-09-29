@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingBag, Phone } from 'lucide-react';
 
 interface NavbarProps {
   onOpenCheckout: () => void;
@@ -23,9 +23,24 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-3">
           <a
             href="#"
-            className="text-lg font-extrabold tracking-tight text-white hover:opacity-90 transition-opacity flex items-center gap-2"
+            className="text-lg font-extrabold tracking-tight text-white hover:opacity-90 transition-opacity flex items-center gap-2.5"
           >
-            <span>COLD CUSTOMS</span>
+            <img
+              src="/logo.jpg"
+              alt="Cold Customs Logo"
+              className="w-10 h-10 aspect-square rounded-xl shadow-md border border-white/10 shrink-0 object-contain bg-black p-0.5"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/favicon-192x192.png';
+              }}
+            />
+            <div className="flex flex-col">
+              <span className="font-display font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-100 to-zinc-400 text-base leading-tight">
+                COLD CUSTOMS
+              </span>
+              <span className="text-[10px] text-zinc-400 font-medium tracking-normal -mt-0.5 hidden sm:block">
+                Części Motocyklowe
+              </span>
+            </div>
           </a>
         </div>
 
@@ -50,6 +65,29 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Zone 3: Actions */}
         <div className="flex items-center gap-2">
+          {/* Phone quick call */}
+          <a
+            href="tel:+48534396429"
+            title="Zadzwoń do nas: +48 534 396 429"
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 text-xs font-semibold text-zinc-300 hover:text-white transition-colors"
+          >
+            <Phone className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="font-mono text-[11px]">+48 534 396 429</span>
+          </a>
+
+          {/* TikTok link */}
+          <a
+            href="https://www.tiktok.com/@coldcustoms_official"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="TikTok @coldcustoms_official"
+            className="flex items-center justify-center w-8 h-8 rounded-full bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 text-zinc-300 hover:text-white transition-colors"
+          >
+            <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+              <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.85.12V9.36a6.34 6.34 0 0 0-6.61 6.32A6.33 6.33 0 0 0 10.02 22a6.34 6.34 0 0 0 6.35-6.33V9.08a8.31 8.31 0 0 0 4.67 1.44v-3.48a4.84 4.84 0 0 1-1.45-.35z" />
+            </svg>
+          </a>
+
           <motion.button
             id="navbar-cart-btn"
             onClick={onOpenCheckout}

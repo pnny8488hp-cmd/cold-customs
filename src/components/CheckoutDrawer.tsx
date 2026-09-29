@@ -5,6 +5,7 @@ import { PaczkomatMapPicker, InPostPoint } from './PaczkomatMapPicker';
 import { OrderSuccessData } from './OrderSuccessModal';
 import { CartItem } from '../types/cart';
 import { PRODUCTS, ProductItem, ProductVariant, FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING_FEE } from '../data/productData';
+import { useShipping } from '../context/ShippingContext';
 
 interface CheckoutDrawerProps {
   isOpen: boolean;
@@ -48,6 +49,7 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedLocker, setSelectedLocker] = useState<InPostPoint | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const { settings, isSameDayActiveNow } = useShipping();
 
   React.useEffect(() => {
     if (initialStep) {
@@ -411,6 +413,26 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
                 </div>
               )}
 
+              {/* Shipping Dispatch Promise */}
+              <div>
+                {isSameDayActiveNow ? (
+                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center gap-2.5 text-xs text-emerald-300">
+                    <span className="relative flex h-2.5 w-2.5 shrink-0">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                    </span>
+                    <span className="leading-snug">
+                      <strong className="text-white">Wysyłka DZISIAJ!</strong> Zamówienie złożone przed {settings.cutoffHour}:00 wyślemy jeszcze dzisiaj Paczkomatem InPost.
+                    </span>
+                  </div>
+                ) : (
+                  <div className="p-2.5 rounded-xl bg-zinc-900 border border-white/10 flex items-center gap-2 text-xs text-zinc-300">
+                    <Truck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span>{settings.customNotice || 'Błyskawiczna wysyłka w 24-48h'} · Paczkomaty InPost & Kurier</span>
+                  </div>
+                )}
+              </div>
+
               {/* Delivery method */}
               <div>
                 <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider block mb-2">
@@ -630,6 +652,20 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
                     <span>Potwierdź zamówienie ({totalPrice} zł)</span>
                   )}
                 </button>
+
+                {/* Direct support reassurance */}
+                <div className="py-2.5 px-3 rounded-xl bg-zinc-900/60 border border-white/5 text-[11px] text-zinc-400 text-center space-y-1">
+                  <span className="text-zinc-300 font-semibold block">Masz pytania przed zakupem? Jesteśmy dostępni:</span>
+                  <div className="flex items-center justify-center gap-2.5 flex-wrap">
+                    <a href="tel:+48534396429" className="text-emerald-400 hover:underline font-mono font-bold">
+                      📞 +48 534 396 429
+                    </a>
+                    <span>·</span>
+                    <a href="mailto:coldcustoms.contact@gmail.com" className="text-zinc-300 hover:text-white hover:underline">
+                      ✉️ coldcustoms.contact@gmail.com
+                    </a>
+                  </div>
+                </div>
 
                 <div className="pt-2 text-center text-[11px] text-zinc-500 space-y-1.5">
                   <div className="flex items-center justify-center gap-3">

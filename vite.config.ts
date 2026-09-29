@@ -422,6 +422,46 @@ Status: ${order.payment?.status}`,
     return updated;
   }
 
+  const shippingFile = path.join(dataDir, 'shipping.json');
+  const defaultShippingSettings = {
+    sameDayShippingEnabled: true,
+    cutoffHour: 16,
+    customNotice: '',
+  };
+
+  function readShippingSettings() {
+    try {
+      if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+      if (!fs.existsSync(shippingFile)) {
+        fs.writeFileSync(shippingFile, JSON.stringify(defaultShippingSettings, null, 2), 'utf-8');
+        return defaultShippingSettings;
+      }
+      const content = fs.readFileSync(shippingFile, 'utf-8');
+      const parsed = JSON.parse(content || '{}');
+      return {
+        sameDayShippingEnabled: parsed.sameDayShippingEnabled !== undefined ? Boolean(parsed.sameDayShippingEnabled) : true,
+        cutoffHour: typeof parsed.cutoffHour === 'number' ? parsed.cutoffHour : 16,
+        customNotice: typeof parsed.customNotice === 'string' ? parsed.customNotice : '',
+        updatedAt: parsed.updatedAt || new Date().toISOString(),
+      };
+    } catch {
+      return defaultShippingSettings;
+    }
+  }
+
+  function writeShippingSettings(data: any) {
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+    const current = readShippingSettings();
+    const updated = {
+      sameDayShippingEnabled: data.sameDayShippingEnabled !== undefined ? Boolean(data.sameDayShippingEnabled) : current.sameDayShippingEnabled,
+      cutoffHour: typeof data.cutoffHour === 'number' ? Math.max(0, Math.min(23, data.cutoffHour)) : current.cutoffHour,
+      customNotice: typeof data.customNotice === 'string' ? data.customNotice.slice(0, 150) : current.customNotice,
+      updatedAt: new Date().toISOString(),
+    };
+    fs.writeFileSync(shippingFile, JSON.stringify(updated, null, 2), 'utf-8');
+    return updated;
+  }
+
   return {
     name: 'orders-management-plugin',
     configureServer(server: any) {
@@ -441,6 +481,42 @@ Status: ${order.payment?.status}`,
           return res.end('403 Forbidden: Dostęp zabroniony');
         }
         next();
+      });
+
+      // API: Shipping settings (GET public, POST protected)
+      server.middlewares.use('/api/shipping-settings', (req: any, res: any) => {
+        if (req.method === 'GET') {
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          return res.end(JSON.stringify({ success: true, settings: readShippingSettings() }));
+        }
+
+        if (req.method === 'POST') {
+          const parsedUrl = new URL(req.url, 'http://localhost');
+          const submitted = req.headers['x-admin-password'] || req.headers['x-admin-pin'] || parsedUrl.searchParams.get('pin') || parsedUrl.searchParams.get('password');
+
+          if (!isValidSecret(submitted)) {
+            res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+            return res.end(JSON.stringify({ error: 'Brak uprawnień. Nieprawidłowe hasło.' }));
+          }
+
+          let body = '';
+          req.on('data', (c: any) => { body += c; });
+          req.on('end', () => {
+            try {
+              const data = JSON.parse(body || '{}');
+              const updated = writeShippingSettings(data);
+              res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ success: true, settings: updated }));
+            } catch (err: any) {
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: err.message }));
+            }
+          });
+          return;
+        }
+
+        res.writeHead(405);
+        res.end();
       });
 
       // API: Notifications settings (GET public, POST protected)
@@ -802,9 +878,61 @@ Status: ${order.payment?.status}`,
   };
 }
 
+function uploadLogoPlugin() {
+  return {
+    name: 'upload-logo-plugin',
+    configureServer(server: any) {
+      server.middlewares.use('/api/upload-logo', (req: any, res: any) => {
+        if (req.method === 'POST') {
+          let body = '';
+          req.on('data', (chunk: any) => { body += chunk; });
+          req.on('end', () => {
+            try {
+              const { base64 } = JSON.parse(body || '{}');
+              if (!base64) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify({ error: 'Brak danych pliku' }));
+              }
+              const base64Data = base64.replace(/^data:image\/\w+;base64,/, '');
+              const buffer = Buffer.from(base64Data, 'base64');
+              const publicDir = path.resolve(process.cwd(), 'public');
+              if (!fs.existsSync(publicDir)) {
+                fs.mkdirSync(publicDir, { recursive: true });
+              }
+              const logoJpg = path.join(publicDir, 'logo.jpg');
+              const logoPng = path.join(publicDir, 'logo.png');
+              fs.writeFileSync(logoJpg, buffer);
+              fs.writeFileSync(logoPng, buffer);
+
+              try {
+                const { execSync } = require('child_process');
+                execSync(`convert "${logoJpg}" -resize 48x48 "${path.join(publicDir, 'favicon-48x48.png')}" 2>/dev/null || true`);
+                execSync(`convert "${logoJpg}" -resize 96x96 "${path.join(publicDir, 'favicon-96x96.png')}" 2>/dev/null || true`);
+                execSync(`convert "${logoJpg}" -resize 180x180 "${path.join(publicDir, 'apple-touch-icon.png')}" 2>/dev/null || true`);
+                execSync(`convert "${logoJpg}" -resize 192x192 "${path.join(publicDir, 'favicon-192x192.png')}" 2>/dev/null || true`);
+                execSync(`convert "${logoJpg}" -resize 512x512 "${path.join(publicDir, 'favicon-512x512.png')}" 2>/dev/null || true`);
+                execSync(`convert "${logoJpg}" -resize 32x32 "${path.join(publicDir, 'favicon.ico')}" 2>/dev/null || true`);
+              } catch {}
+
+              res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ success: true, url: `/logo.jpg?t=${Date.now()}` }));
+            } catch (err: any) {
+              res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ error: err.message }));
+            }
+          });
+        } else {
+          res.writeHead(405);
+          res.end();
+        }
+      });
+    },
+  };
+}
+
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss(), saveOriginalImagesPlugin(), stripeCheckoutPlugin(), ordersManagementPlugin()],
+    plugins: [react(), tailwindcss(), saveOriginalImagesPlugin(), uploadLogoPlugin(), stripeCheckoutPlugin(), ordersManagementPlugin()],
     resolve: {
       alias: {
         '@': path.resolve(process.cwd(), '.'),

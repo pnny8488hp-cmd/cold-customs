@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ImageProvider, useProductImages } from './context/ImageContext';
+import { ShippingProvider } from './context/ShippingContext';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { ProductCatalog } from './components/ProductCatalog';
@@ -340,8 +341,10 @@ function StoreContent() {
 
 export default function App() {
   return (
-    <ImageProvider>
-      <StoreContent />
-    </ImageProvider>
+    <ShippingProvider>
+      <ImageProvider>
+        <StoreContent />
+      </ImageProvider>
+    </ShippingProvider>
   );
 }
